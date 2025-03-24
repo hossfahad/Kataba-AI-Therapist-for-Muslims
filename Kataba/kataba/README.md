@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kataba - Muslim AI Conversational Therapist
+
+Kataba is an AI-powered conversational therapist designed specifically for Muslims seeking emotional support and guidance with Islamic principles in mind. Built with Next.js, React, TypeScript, and Tailwind CSS, this application provides a chat interface with high-quality text-to-speech powered by Cartesia.
+
+## Features
+
+- **Conversational AI**: Powered by OpenAI's GPT-4o for natural and empathetic conversations
+- **Islamic Guidance**: Incorporates Islamic principles in a gentle, non-judgmental way
+- **Voice Output**: Real-time text-to-speech using Cartesia's high-quality voice synthesis
+- **Modern UI**: Clean, responsive design using Tailwind CSS and Shadcn UI components
+- **Persistent Chat History**: Maintains conversation context throughout the session
+- **Mutable Audio**: Toggle voice output on/off as needed
+
+## Tech Stack
+
+- **Frontend**: React, Next.js, TypeScript, Tailwind CSS
+- **UI Components**: Shadcn UI
+- **State Management**: Zustand
+- **AI**: OpenAI GPT-4o for conversation
+- **TTS**: Cartesia for voice output
+- **API Routes**: Next.js API routes for secure API key handling
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (v18 or higher)
+- npm or yarn
+- OpenAI API key
+- Cartesia API key
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/hossfahad/Kataba-AI-Therapist-for-Muslims.git
+   cd Kataba-AI-Therapist-for-Muslims
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
 
-## Learn More
+3. Create a `.env.local` file in the root directory and add your API keys:
+   ```
+   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+   CARTESIA_API_KEY=your_cartesia_api_key_here
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to use the application.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
 
-## Deploy on Vercel
+1. Type your message in the text area at the bottom of the screen
+2. Press Enter or click the Send button
+3. Receive an AI response with voice output
+4. Toggle the sound on/off using the mute button
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Configuration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### OpenAI Model
+
+You can configure the OpenAI model and parameters in `/src/lib/openai.ts`.
+
+### Cartesia Voice
+
+You can adjust the Cartesia voice settings in `/src/app/api/tts/route.ts`:
+
+- Change the voice ID
+- Adjust the speed setting
+- Modify the output format
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- OpenAI for their powerful language model
+- Cartesia for high-quality text-to-speech
+- Shadcn UI for beautiful UI components
+- Next.js team for the amazing framework
+
+---
+
+Created with ❤️ for the Muslim community
