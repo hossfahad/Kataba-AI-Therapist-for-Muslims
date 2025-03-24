@@ -1,0 +1,10 @@
+# Ignore everything except the kataba project
+/*
+!kataba/
+!.gitignore
+
+# Make sure these files are also excluded
+.DS_Store
+.env*
+*.pem
+*.log 
