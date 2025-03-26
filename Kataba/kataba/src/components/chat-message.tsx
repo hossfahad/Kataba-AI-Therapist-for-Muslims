@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import "@/components/ui/styles.css";
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -32,63 +32,36 @@ export const ChatMessage = ({
   useEffect(() => {
     if (!isUser && displayedContent !== undefined) {
       setDisplayText(displayedContent);
-      
-      // Auto-scroll to the bottom as new text appears
-      if (messageRef.current) {
-        messageRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
     }
   }, [displayedContent, isUser]);
 
   return (
     <div 
       className={cn(
-        "flex gap-4 mb-6 animate-slide-in",
-        isUser ? "flex-row-reverse" : "flex-row"
+        "w-full mb-4 animate-slide-in floating-container",
+        isUser ? "flex justify-end" : "flex justify-start"
       )}
-    >
-      <Avatar className={cn(
-        "h-10 w-10 shadow-sm transition-all",
-        isUser ? "bg-pink-500 text-white" : "bg-white text-pink-500"
-      )}>
-        <div className="flex h-full w-full items-center justify-center">
-          {isUser ? '👤' : '🤖'}
-        </div>
-      </Avatar>
-      
+    >      
       <div 
         className={cn(
-          "relative max-w-[80%] p-4 rounded-2xl mb-2",
+          "relative max-w-[85%] p-4 rounded-2xl",
           isUser 
-            ? "bg-pink-500 text-white rounded-tr-none" 
-            : "glass rounded-tl-none"
+            ? "gradient-pink text-white shadow-md shadow-pink-200/20" 
+            : "glass-bubble text-gray-800"
         )}
       >
-        <p ref={messageRef} className="text-sm font-sans leading-relaxed">
+        <p 
+          ref={messageRef} 
+          className="text-base font-medium leading-relaxed font-['Inter','Open Sans',sans-serif]"
+        >
           {displayText}
           {!isUser && isStreaming && (
-            <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse-soft" />
+            <span className="inline-block w-2 h-5 ml-1 bg-current animate-pulse-soft" />
           )}
         </p>
-        <time className="block mt-2 text-[10px] opacity-70">
+        <time className="block mt-2 text-[10px] opacity-70 font-light">
           {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </time>
-        
-        {/* Triangle pointer */}
-        <div 
-          className={cn(
-            "absolute top-0 w-3 h-3 overflow-hidden",
-            isUser ? "right-0 -translate-x-[-2px]" : "left-0 -translate-x-[2px]"
-          )}
-        >
-          <div 
-            className={cn(
-              "absolute inset-0 w-full h-full rotate-45 transform origin-top-left",
-              isUser ? "bg-pink-500" : "glass-triangle"
-            )}
-            style={{ top: '0px', left: isUser ? '100%' : '-50%' }}
-          ></div>
-        </div>
       </div>
     </div>
   );

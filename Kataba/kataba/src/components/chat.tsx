@@ -7,6 +7,7 @@ import { ChatMessage } from "./chat-message";
 import { useChatStore } from "@/lib/store";
 import { getChatCompletion } from "@/lib/openai";
 import { cn } from '@/lib/utils';
+import "@/components/ui/styles.css";
 
 interface Message {
   id: string;
@@ -106,9 +107,33 @@ export const Chat = () => {
     };
   }, []);
 
+  // Always scroll to bottom whenever messages change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo(0, scrollRef.current.scrollHeight);
+      const scrollContainer = scrollRef.current;
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'auto' // Use 'auto' instead of 'smooth' to prevent animation
+      });
+      
+      // Set up MutationObserver to watch for changes in chat content and scroll to bottom
+      const observer = new MutationObserver(() => {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'auto'
+        });
+      });
+      
+      // Watch for changes in the scroll container and its descendants
+      if (scrollContainer.firstElementChild) {
+        observer.observe(scrollContainer.firstElementChild, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+      }
+      
+      return () => observer.disconnect();
     }
   }, [messages, streamedText]);
 
@@ -239,12 +264,12 @@ export const Chat = () => {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4 relative overflow-hidden rounded-xl glass-card">
+    <div className="flex h-full flex-col gap-4 relative overflow-hidden rounded-xl glass-panel">
       {/* Chat header */}
-      <div className="flex items-center justify-between p-4 chat-header">
+      <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isApiAvailable ? 'bg-pink-500 animate-pulse-soft' : 'bg-gray-300'}`}></div>
-          <span className="text-sm text-gray-800">{isApiAvailable ? 'Active Conversation' : 'Inactive Conversation'}</span>
+          <span className="text-sm font-medium text-gray-700">{isApiAvailable ? 'Active Conversation' : 'Inactive Conversation'}</span>
         </div>
         <Button
           onClick={toggleMute}
@@ -272,12 +297,15 @@ export const Chat = () => {
       </div>
 
       {/* Messages area */}
-      <ScrollArea className="flex-1 p-4 overflow-y-auto" ref={scrollRef}>
+      <ScrollArea 
+        className="flex-1 px-4 py-2 overflow-y-auto scroll-auto custom-scrollbar" 
+        ref={scrollRef}
+      >
         <div className="flex flex-col">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 animate-bounce-soft"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <p className="text-sm">Start a conversation to begin</p>
+              <p className="text-base font-medium">Start a conversation to begin</p>
             </div>
           ) : (
             messages.map((message: Message) => (
@@ -292,43 +320,43 @@ export const Chat = () => {
             ))
           )}
           {isLoading && !isStreaming && (
-            <div className="flex items-center gap-3 text-sm text-gray-400 py-2 px-4 self-start glass-card mt-4 animate-pulse-soft">
+            <div className="flex items-center gap-3 text-sm text-gray-500 py-3 px-4 self-start bg-white/80 backdrop-blur-sm border border-gray-100 rounded-full shadow-sm mt-4 animate-pulse-soft">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "0ms" }}></div>
                 <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "200ms" }}></div>
                 <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "400ms" }}></div>
               </div>
-              <span>Thinking...</span>
+              <span className="font-medium">Thinking...</span>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <Separator className="bg-gray-100" />
-
       {/* Input area */}
-      <div className="p-4 flex gap-2">
-        <Textarea
-          ref={inputRef}
-          placeholder={isApiAvailable ? "Say Bismillah and type away..." : "API unavailable. Please try again later."}
-          className={cn(
-            "min-h-[60px] max-h-[120px] flex-1 resize-none glass placeholder:text-gray-300 text-sm font-sans focus-visible:ring-gray-200",
-            !isApiAvailable && "opacity-50"
-          )}
-          onKeyDown={handleKeyDown}
-          disabled={!isApiAvailable}
-        />
-        <Button
-          onClick={handleSubmit}
-          disabled={isLoading || !isApiAvailable}
-          className={cn(
-            "bg-pink-500 hover:bg-pink-600 text-white h-auto px-4 self-end",
-            !isApiAvailable && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M22 2 11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          Send
-        </Button>
+      <div className="p-4 border-t border-gray-100">
+        <div className="flex items-center gap-2 relative">
+          <Textarea
+            ref={inputRef}
+            placeholder={isApiAvailable ? "Say Bismillah and type away..." : "API unavailable. Please try again later."}
+            className={cn(
+              "min-h-[60px] max-h-[120px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-pink-200",
+              !isApiAvailable && "opacity-50"
+            )}
+            onKeyDown={handleKeyDown}
+            disabled={!isApiAvailable}
+          />
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading || !isApiAvailable}
+            className={cn(
+              "bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white rounded-full h-12 w-12 p-0 flex items-center justify-center self-center shadow-md shadow-pink-200/30",
+              !isApiAvailable && "opacity-50 cursor-not-allowed"
+            )}
+            aria-label="Send message"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </Button>
+        </div>
       </div>
     </div>
   );
