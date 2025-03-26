@@ -7,7 +7,6 @@ import { ChatMessage } from "./chat-message";
 import { useChatStore } from "@/lib/store";
 import { getChatCompletion } from "@/lib/openai";
 import { cn } from '@/lib/utils';
-import memoryService from '@/lib/memory';
 
 interface Message {
   id: string;
@@ -153,9 +152,6 @@ export const Chat = () => {
       const chatMessages = messages.map(msg => ({ role: msg.role, content: msg.content }));
       chatMessages.push({ role: 'user' as const, content });
       
-      // Search for relevant memories
-      const relevantMemories = await memoryService.searchMemory(content);
-      
       // Add placeholder assistant message
       const assistantMessageId = addMessage({ 
         role: 'assistant', 
@@ -163,14 +159,8 @@ export const Chat = () => {
       });
       setCurrentAssistantMessageId(assistantMessageId);
       
-      // Get the full response with memories included
-      const response = await getChatCompletion(chatMessages, relevantMemories);
-      
-      // Store the conversation in memory
-      await memoryService.addMemory([
-        { role: 'user', content },
-        { role: 'assistant', content: response }
-      ]);
+      // Get the full response
+      const response = await getChatCompletion(chatMessages);
       
       // Start TTS as early as possible to reduce latency
       if (!isMuted && response) {
