@@ -24,7 +24,7 @@ export default function Home() {
             </div>
             <h3 className="text-lg text-gray-700 mb-2">Begin with Bismillah</h3>
             <p className="text-sm text-gray-600">
-            Say what's on your mind — Kataba welcomes your thoughts with compassion and calm.
+            Say what&apos;s on your mind — Kataba welcomes your thoughts with compassion and calm.
             </p>
           </div>
           <div className="glass-card p-6 flex flex-col items-center text-center">

@@ -15,9 +15,6 @@ interface Message {
   timestamp: Date;
 }
 
-// Default user ID for now - in a real app, this would be from auth system
-const DEFAULT_USER_ID = 'default_user';
-
 export const Chat = () => {
   const { 
     messages, 
@@ -52,7 +49,8 @@ export const Chat = () => {
         const silentPlay = async () => {
           try {
             await audioRef.current?.play();
-          } catch (e) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (_) {
             // Silent error - this is expected
           }
           // Clean up after enabling audio
