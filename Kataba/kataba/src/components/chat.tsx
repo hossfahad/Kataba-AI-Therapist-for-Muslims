@@ -151,6 +151,17 @@ export const Chat = () => {
         body: JSON.stringify({ text }),
       });
       
+      // Check if we're using the fallback
+      const isFallback = response.headers.get('X-TTS-Fallback') === 'true';
+      
+      if (isFallback) {
+        // Use the browser's native TTS as a fallback
+        const data = await response.json();
+        const utterance = new SpeechSynthesisUtterance(data.text);
+        window.speechSynthesis.speak(utterance);
+        return;
+      }
+      
       if (!response.ok) {
         throw new Error(`Failed to get TTS: ${response.status}`);
       }
