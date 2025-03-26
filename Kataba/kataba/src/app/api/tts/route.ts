@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { applyCustomPronunciations } from '@/lib/pronunciation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +9,9 @@ export async function POST(req: NextRequest) {
     if (!text) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
     }
+
+    // Apply custom pronunciations to the text
+    const formattedText = applyCustomPronunciations(text);
 
     // Get Cartesia API key from environment variables
     const cartesiaApiKey = process.env.CARTESIA_API_KEY;
@@ -30,7 +34,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model_id: 'sonic-2',
-        transcript: text, // This passes the OpenAI response text directly to Cartesia
+        transcript: formattedText, // Now using text with custom pronunciations
         voice: {
           mode: 'id',
           id: 'a38e4e85-e815-43ab-acf1-907c4688dd6c', // Keeping the existing voice ID
@@ -39,9 +43,10 @@ export async function POST(req: NextRequest) {
           }
         },
         output_format: {
-          container: 'wav',
+          container: 'mp3',
           encoding: 'pcm_f32le',
-          sample_rate: 44100
+          sample_rate: 44100,
+          bit_rate: 128000
         },
         language: 'en'
       }),
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest) {
     // Return the audio data
     return new NextResponse(audioArrayBuffer, {
       headers: {
-        'Content-Type': 'audio/wav',
+        'Content-Type': 'audio/mp3',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
