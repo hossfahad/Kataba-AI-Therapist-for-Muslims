@@ -29,7 +29,7 @@ export default function RootLayout({
           <div className="container max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Link href="/">
-                <h1 className="text-xl font-sans font-light text-gray-800 hover:text-pink-500 transition-colors duration-300 cursor-pointer">Kataba</h1>
+                <h1 className="text-3xl font-sans font-light text-gray-800 hover:text-pink-300 transition-colors duration-300 cursor-default">كَتَبَ</h1>
               </Link>
             </div>
             <nav className="hidden md:flex space-x-6">

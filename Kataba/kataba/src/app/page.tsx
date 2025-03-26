@@ -7,11 +7,11 @@ export default function Home() {
   return (
     <div className="py-12 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
       <section className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-light text-gray-800 mb-4 animate-fade-in">
-          Your AI Therapeutic Companion
+        <h1 className="text-3xl md:text-5xl font-light text-gray-800 mb-4 animate-fade-in">
+        Kataba — Your Therapeutic Companion
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8 animate-slide-up">
-          Connect with Kataba for thoughtful conversations, guided reflection, and mental wellness support.
+        Speak freely. Reflect deeply. Grow spiritually. Kataba (كَتَبَ) is your AI companion — blending therapeutic wisdom with the timeless guidance of Islamic thought.
         </p>
       </section>
 
@@ -22,27 +22,27 @@ export default function Home() {
             <div className="w-12 h-12 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full mb-4 animate-bounce-soft">
               1
             </div>
-            <h3 className="text-lg text-gray-700 mb-2">Start a Conversation</h3>
+            <h3 className="text-lg text-gray-700 mb-2">Begin with Bismillah</h3>
             <p className="text-sm text-gray-600">
-              Type or speak to begin your therapeutic journey with Kataba.
+            Say what's on your mind — Kataba welcomes your thoughts with compassion and calm.
             </p>
           </div>
           <div className="glass-card p-6 flex flex-col items-center text-center">
             <div className="w-12 h-12 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full mb-4 animate-bounce-soft">
               2
             </div>
-            <h3 className="text-lg text-gray-700 mb-2">Share Your Thoughts</h3>
+            <h3 className="text-lg text-gray-700 mb-2">Speak from the Heart</h3>
             <p className="text-sm text-gray-600">
-              Express your feelings, concerns, or questions in a safe, judgment-free space.
+            Share your feelings or struggles. Kataba listens without judgment, rooted in values of <em>rahma</em> and <em>amanah</em>.
             </p>
           </div>
           <div className="glass-card p-6 flex flex-col items-center text-center">
             <div className="w-12 h-12 flex items-center justify-center bg-pink-100 text-pink-500 rounded-full mb-4 animate-bounce-soft">
               3
             </div>
-            <h3 className="text-lg text-gray-700 mb-2">Receive Guidance</h3>
+            <h3 className="text-lg text-gray-700 mb-2">Receive Gentle Guidance</h3>
             <p className="text-sm text-gray-600">
-              Get thoughtful responses and supportive guidance tailored to your needs.
+            Get thoughtful reflections inspired by emotional intelligence and Islamic wellness principles like <em>tawakkul</em> and <em>shukr</em>.
             </p>
           </div>
         </div>
@@ -51,7 +51,7 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-16">
         <div className="lg:col-span-3">
           <div className="h-full flex flex-col">
-            <h2 className="text-lg text-gray-700 mb-2">Chat Interface</h2>
+              {/* <h2 className="text-lg text-gray-700 mb-2">Chat Interface</h2> */}
             <div className="flex-grow bg-white/10 rounded-lg p-1 h-[600px]">
               <Chat />
             </div>
@@ -67,19 +67,24 @@ export default function Home() {
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-center gap-2">
               <span className="bg-pink-100 text-pink-500 p-1 rounded-full">✓</span>
-              Voice-enabled conversations
+              Type or speak to begin a guided, voice-enabled conversation
             </li>
             <li className="flex items-center gap-2">
               <span className="bg-pink-100 text-pink-500 p-1 rounded-full">✓</span>
-              Thoughtful, empathetic responses
+              Reflect deeply with prompts rooted in Islamic tradition
+
             </li>
             <li className="flex items-center gap-2">
               <span className="bg-pink-100 text-pink-500 p-1 rounded-full">✓</span>
-              Privacy-focused design
+              Trust your privacy — nothing is stored or used to train AI beyond your session
             </li>
             <li className="flex items-center gap-2">
               <span className="bg-pink-100 text-pink-500 p-1 rounded-full">✓</span>
-              Guided reflection exercises
+              Resume anytime — your chat picks up right where you left off
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="bg-pink-100 text-pink-500 p-1 rounded-full">✓</span>
+              Create an account to save your journey and access personalized support
             </li>
           </ul>
         </div>

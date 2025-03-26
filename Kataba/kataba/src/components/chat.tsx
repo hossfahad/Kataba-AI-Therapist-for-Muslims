@@ -37,15 +37,17 @@ export const Chat = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedText, setStreamedText] = useState("");
   const [currentAssistantMessageId, setCurrentAssistantMessageId] = useState<string | null>(null);
+  const [isApiAvailable, setIsApiAvailable] = useState(true);
 
   useEffect(() => {
     // Create an audio element for playing TTS
     audioRef.current = new Audio();
     
     // Set up audio context on user interaction to enable autoplay
+    // only if the user unmutes
     const enableAudio = () => {
       // This helps with browser autoplay policies
-      if (audioRef.current) {
+      if (audioRef.current && !isMuted) {
         // Create a silent buffer and play it to unblock audio
         const silentPlay = async () => {
           try {
@@ -76,6 +78,34 @@ export const Chat = () => {
       document.removeEventListener('click', enableAudio);
       document.removeEventListener('keydown', enableAudio);
     };
+  }, [isMuted]);
+
+  // Check API availability on component mount
+  useEffect(() => {
+    const checkApiAvailability = async () => {
+      try {
+        // Simple ping to check if API is available
+        const response = await fetch('/api/health', { 
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // If we get a successful response, the API is available
+        setIsApiAvailable(response.ok);
+      } catch (error) {
+        console.error('API health check failed:', error);
+        setIsApiAvailable(false);
+      }
+    };
+    
+    checkApiAvailability();
+    
+    // Set up interval to periodically check API availability (every 30 seconds)
+    const intervalId = setInterval(checkApiAvailability, 30000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   useEffect(() => {
@@ -86,7 +116,7 @@ export const Chat = () => {
 
   const speakWithCartesia = async (text: string) => {
     try {
-      // Use the browser's built-in speech synthesis as a fallback
+      // Return early if text is empty or audio is muted
       if (!text || isMuted) return;
       
       // Call Cartesia API through our backend
@@ -133,7 +163,7 @@ export const Chat = () => {
 
   const handleSubmit = async () => {
     const content = inputRef.current?.value.trim();
-    if (!content || isLoading) return;
+    if (!content || isLoading || !isApiAvailable) return;
 
     // Clear input
     if (inputRef.current) {
@@ -162,7 +192,10 @@ export const Chat = () => {
       // Get the full response
       const response = await getChatCompletion(chatMessages);
       
-      // Start TTS as early as possible to reduce latency
+      // API is working if we got here
+      setIsApiAvailable(true);
+      
+      // Start TTS only if not muted
       if (!isMuted && response) {
         // Fire and forget - this will play in the background while we stream text
         speakWithCartesia(response);
@@ -186,6 +219,9 @@ export const Chat = () => {
       
     } catch (error) {
       console.error('Error:', error);
+      // Mark API as unavailable
+      setIsApiAvailable(false);
+      
       addMessage({
         role: 'assistant',
         content: 'I apologize, but I encountered an error. Please try again.',
@@ -209,23 +245,30 @@ export const Chat = () => {
       {/* Chat header */}
       <div className="flex items-center justify-between p-4 chat-header">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse-soft"></div>
-          <span className="text-sm text-gray-800">Active Conversation</span>
+          <div className={`w-2 h-2 rounded-full ${isApiAvailable ? 'bg-pink-500 animate-pulse-soft' : 'bg-gray-300'}`}></div>
+          <span className="text-sm text-gray-800">{isApiAvailable ? 'Active Conversation' : 'Inactive Conversation'}</span>
         </div>
         <Button
           onClick={toggleMute}
           variant="ghost"
           size="sm"
           className={cn(
-            "h-8 w-8 p-0 rounded-full", 
+            "rounded-md px-2", 
             isMuted ? "text-gray-300" : "text-pink-500"
           )}
-          aria-label={isMuted ? "Unmute" : "Mute"}
+          aria-label={isMuted ? "Enable audio" : "Disable audio"}
+          title={isMuted ? "Enable audio" : "Disable audio"}
         >
           {isMuted ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+            <div className="flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+              <span className="text-xs font-medium">Voice: Off</span>
+            </div>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+            <div className="flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+              <span className="text-xs font-medium">Voice: On</span>
+            </div>
           )}
         </Button>
       </div>
@@ -269,14 +312,21 @@ export const Chat = () => {
       <div className="p-4 flex gap-2">
         <Textarea
           ref={inputRef}
-          placeholder="Type your message..."
-          className="min-h-[60px] max-h-[120px] flex-1 resize-none glass placeholder:text-gray-300 text-sm font-sans focus-visible:ring-gray-200"
+          placeholder={isApiAvailable ? "Say Bismillah and type away..." : "API unavailable. Please try again later."}
+          className={cn(
+            "min-h-[60px] max-h-[120px] flex-1 resize-none glass placeholder:text-gray-300 text-sm font-sans focus-visible:ring-gray-200",
+            !isApiAvailable && "opacity-50"
+          )}
           onKeyDown={handleKeyDown}
+          disabled={!isApiAvailable}
         />
         <Button
           onClick={handleSubmit}
-          disabled={isLoading}
-          className="bg-pink-500 hover:bg-pink-600 text-white h-auto px-4 self-end"
+          disabled={isLoading || !isApiAvailable}
+          className={cn(
+            "bg-pink-500 hover:bg-pink-600 text-white h-auto px-4 self-end",
+            !isApiAvailable && "opacity-50 cursor-not-allowed"
+          )}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M22 2 11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
           Send

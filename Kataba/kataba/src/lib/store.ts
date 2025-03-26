@@ -20,7 +20,7 @@ interface ChatState {
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isLoading: false,
-  isMuted: false,
+  isMuted: true,
   addMessage: (message) => {
     const id = crypto.randomUUID();
     set((state) => ({
