@@ -68,13 +68,15 @@ export async function POST(req: NextRequest) {
       content: response.choices[0]?.message?.content || '',
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in chat API route:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return NextResponse.json(
       { 
         error: 'Failed to get response from AI',
-        message: error.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );

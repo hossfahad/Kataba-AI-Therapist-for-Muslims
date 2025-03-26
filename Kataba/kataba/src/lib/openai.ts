@@ -1,5 +1,3 @@
-import OpenAI from 'openai';
-
 /**
  * Gets a completion from the chat model
  */
