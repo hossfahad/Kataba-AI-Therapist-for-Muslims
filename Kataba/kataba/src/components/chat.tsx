@@ -249,7 +249,7 @@ export const Chat = () => {
       {/* Chat header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isApiAvailable ? 'bg-pink-500 animate-pulse-soft' : 'bg-gray-300'}`}></div>
+          <div className={`w-2 h-2 rounded-full ${isApiAvailable ? 'bg-teal-500 animate-pulse-soft' : 'bg-gray-300'}`}></div>
           <span className="text-sm font-medium text-gray-700">{isApiAvailable ? 'Active Conversation' : 'Inactive Conversation'}</span>
         </div>
         <Button
@@ -258,7 +258,7 @@ export const Chat = () => {
           size="sm"
           className={cn(
             "rounded-md px-2", 
-            isMuted ? "text-gray-300" : "text-pink-500"
+            isMuted ? "text-gray-300" : "text-teal-500"
           )}
           aria-label={isMuted ? "Enable audio" : "Disable audio"}
           title={isMuted ? "Enable audio" : "Disable audio"}
@@ -320,7 +320,7 @@ export const Chat = () => {
             ref={inputRef}
             placeholder={isApiAvailable ? "Say Bismillah and type away..." : "API unavailable. Please try again later."}
             className={cn(
-              "min-h-[60px] max-h-[120px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-pink-200",
+              "min-h-[60px] max-h-[120px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-teal-200",
               !isApiAvailable && "opacity-50"
             )}
             onKeyDown={handleKeyDown}
@@ -330,7 +330,7 @@ export const Chat = () => {
             onClick={handleSubmit}
             disabled={isLoading || !isApiAvailable}
             className={cn(
-              "bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white rounded-full h-12 w-12 p-0 flex items-center justify-center self-center shadow-md shadow-pink-200/30",
+              "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full h-12 w-12 p-0 flex items-center justify-center self-center shadow-md shadow-teal-200/30",
               !isApiAvailable && "opacity-50 cursor-not-allowed"
             )}
             aria-label="Send message"

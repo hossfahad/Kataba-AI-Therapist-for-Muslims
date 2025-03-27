@@ -51,67 +51,67 @@
   :root {
     --radius: 0.625rem;
     
-    --background: 350 100% 98%;
-    --foreground: 350 15% 15%;
+    --background: 160 30% 95%;
+    --foreground: 160 15% 15%;
     
     --card: 0 0% 100%;
-    --card-foreground: 350 15% 15%;
+    --card-foreground: 160 15% 15%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 350 15% 15%;
+    --popover-foreground: 160 15% 15%;
     
-    --primary: 350 100% 65%;
+    --primary: 160 30% 52%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 350 30% 96%;
-    --secondary-foreground: 350 15% 30%;
+    --secondary: 160 30% 96%;
+    --secondary-foreground: 160 15% 30%;
     
-    --muted: 350 30% 96%;
-    --muted-foreground: 350 10% 50%;
+    --muted: 160 30% 96%;
+    --muted-foreground: 160 10% 50%;
     
-    --accent: 350 30% 96%;
-    --accent-foreground: 350 15% 30%;
+    --accent: 160 30% 96%;
+    --accent-foreground: 160 15% 30%;
     
     --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 100%;
     
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 350 100% 65%;
+    --ring: 160 30% 52%;
   }
  
   .dark {
-    --background: 350 15% 10%;
-    --foreground: 350 30% 95%;
+    --background: 160 15% 10%;
+    --foreground: 160 30% 95%;
     
-    --card: 350 15% 15%;
-    --card-foreground: 350 30% 95%;
+    --card: 160 15% 15%;
+    --card-foreground: 160 30% 95%;
     
-    --popover: 350 15% 15%;
-    --popover-foreground: 350 30% 95%;
+    --popover: 160 15% 15%;
+    --popover-foreground: 160 30% 95%;
     
-    --primary: 350 80% 65%;
+    --primary: 160 30% 52%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 350 15% 20%;
-    --secondary-foreground: 350 30% 95%;
+    --secondary: 160 15% 20%;
+    --secondary-foreground: 160 30% 95%;
     
-    --muted: 350 15% 20%;
-    --muted-foreground: 350 20% 70%;
+    --muted: 160 15% 20%;
+    --muted-foreground: 160 20% 70%;
     
-    --accent: 350 15% 20%;
-    --accent-foreground: 350 30% 95%;
+    --accent: 160 15% 20%;
+    --accent-foreground: 160 30% 95%;
     
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 350 15% 25%;
-    --input: 350 15% 25%;
-    --ring: 350 80% 65%;
+    --border: 160 15% 25%;
+    --input: 160 15% 25%;
+    --ring: 160 30% 52%;
   }
    
   body {
-    @apply bg-pink-50 text-gray-900 antialiased;
+    @apply bg-teal-50 text-gray-900 antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
    

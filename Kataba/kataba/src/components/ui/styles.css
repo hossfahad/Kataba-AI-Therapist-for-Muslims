@@ -15,8 +15,8 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
-.gradient-pink {
-  background: linear-gradient(135deg, #f687b3, #d53f8c);
+.gradient-teal {
+  background: linear-gradient(135deg, #80c0aa, #65a68a);
 }
 
 .floating-container {

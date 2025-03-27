@@ -46,7 +46,7 @@ export const ChatMessage = ({
         className={cn(
           "relative max-w-[85%] p-4 rounded-2xl",
           isUser 
-            ? "gradient-pink text-white shadow-md shadow-pink-200/20" 
+            ? "gradient-teal text-white shadow-md shadow-teal-200/20" 
             : "glass-bubble text-gray-800"
         )}
       >

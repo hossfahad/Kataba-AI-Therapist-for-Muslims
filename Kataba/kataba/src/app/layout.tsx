@@ -27,7 +27,7 @@ export default function RootLayout({
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       appearance={{
         elements: {
-          formButtonPrimary: "bg-pink-500 hover:bg-pink-600 text-sm normal-case",
+          formButtonPrimary: "bg-teal-500 hover:bg-teal-600 text-sm normal-case",
           card: "rounded-md shadow-sm border border-gray-200",
           headerTitle: "text-gray-800 font-light",
           headerSubtitle: "text-gray-600 text-sm",
@@ -38,25 +38,27 @@ export default function RootLayout({
       <QueryProvider>
         <html lang="en" className="scroll-smooth">
           <body
-            className={`${inter.variable} font-sans antialiased bg-gradient-to-br from-pink-50 to-white min-h-screen flex flex-col`}
+            className={`${inter.variable} font-sans antialiased bg-gradient-to-br from-teal-50 to-white min-h-screen flex flex-col`}
           >
             <header className="w-full py-4 px-6 border-b chat-header bg-white/50 backdrop-blur-sm z-10 animate-fade-in">
               <div className="container max-w-7xl mx-auto flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Link href="/">
-                    <h1 className="text-3xl font-sans font-light text-gray-800 hover:text-pink-300 transition-colors duration-300 cursor-default">كَتَبَ</h1>
+                    <h1 className="text-3xl font-sans font-light text-gray-800 hover:text-teal-500 transition-colors duration-300 cursor-default">كَتَبَ</h1>
                   </Link>
                 </div>
-                <nav className="hidden md:flex space-x-6">
-                  <a href="#" className="text-sm text-gray-700 hover:text-pink-500 transition-colors duration-300">About</a>
-                  <a href="#how-it-works" className="text-sm text-gray-700 hover:text-pink-500 transition-colors duration-300">How it Works</a>
-                  <a href="#" className="text-sm text-gray-700 hover:text-pink-500 transition-colors duration-300">FAQ</a>
-                  <div className="flex items-center space-x-4">
+                <nav className="flex items-center">
+                  <div className="flex items-center space-x-6">
+                    <a href="#" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">About</a>
+                    <a href="#how-it-works" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">How it Works</a>
+                    <a href="#" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">FAQ</a>
+                  </div>
+                  <div className="flex items-center ml-6 space-x-4">
                     <SignInButton mode="modal">
-                      <button className="text-sm text-gray-700 hover:text-pink-500 transition-colors duration-300">Sign In</button>
+                      <button className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">Sign In</button>
                     </SignInButton>
                     <SignUpButton mode="modal">
-                      <button className="text-sm bg-pink-500 hover:bg-pink-600 text-white py-1 px-3 rounded-md transition-colors duration-300">Sign Up</button>
+                      <button className="text-sm bg-teal-500 hover:bg-teal-600 text-white py-1 px-3 rounded-md transition-colors duration-300">Sign Up</button>
                     </SignUpButton>
                     <UserButton afterSignOutUrl="/" />
                   </div>
@@ -78,21 +80,21 @@ export default function RootLayout({
                   <div>
                     <h3 className="text-sm font-sans font-light text-gray-800 mb-3">Links</h3>
                     <ul className="space-y-2">
-                      <li><a href="#" className="text-xs text-gray-600 hover:text-pink-500 transition-colors duration-300">Privacy Policy</a></li>
-                      <li><a href="#" className="text-xs text-gray-600 hover:text-pink-500 transition-colors duration-300">Terms of Service</a></li>
-                      <li><a href="#" className="text-xs text-gray-600 hover:text-pink-500 transition-colors duration-300">Contact</a></li>
+                      <li><a href="#" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Privacy Policy</a></li>
+                      <li><a href="#" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Terms of Service</a></li>
+                      <li><a href="#" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Contact</a></li>
                     </ul>
                   </div>
                   <div>
                     <h3 className="text-sm font-sans font-light text-gray-800 mb-3">Connect</h3>
                     <div className="flex space-x-4">
-                      <a href="#" className="text-gray-600 hover:text-pink-500 transition-colors duration-300">
+                      <a href="#" className="text-gray-600 hover:text-teal-500 transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
                       </a>
-                      <a href="#" className="text-gray-600 hover:text-pink-500 transition-colors duration-300">
+                      <a href="#" className="text-gray-600 hover:text-teal-500 transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
                       </a>
-                      <a href="#" className="text-gray-600 hover:text-pink-500 transition-colors duration-300">
+                      <a href="#" className="text-gray-600 hover:text-teal-500 transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                       </a>
                     </div>
