@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuth, currentUser } from "@clerk/nextjs/server";
+import { prisma } from '@/lib/prisma';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
 import OpenAI from 'openai';
 
 // Initialize OpenAI client (server-side only)
@@ -13,10 +16,20 @@ Right now, I am struggling with [describe your situation]. Kataba, help me proce
 
 Speak to me as if you truly understand my pain and want the best for me. Be firm when I need truth, gentle when I need comfort, and always guide me toward self-worth, patience, and trust in Allah's plan. Offer me practical steps, spiritual insights, and the perspective I need to heal and move forward.`;
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
+    const { userId } = await getAuth(request);
+    const user = await currentUser();
+    
+    if (!userId || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     // Get messages from request body
-    const { messages } = await req.json();
+    const { messages } = await request.json();
     
     if (!Array.isArray(messages)) {
       return NextResponse.json(

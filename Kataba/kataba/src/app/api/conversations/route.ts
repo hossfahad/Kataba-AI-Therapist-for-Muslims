@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs';
+import { NextResponse, NextRequest } from 'next/server';
+import { getAuth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from '@/lib/prisma';
 
 interface ChatMessage {
@@ -9,9 +9,9 @@ interface ChatMessage {
 }
 
 // GET /api/conversations - Get all conversations for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await getAuth(request);
     const user = await currentUser();
     
     if (!userId || !user) {
@@ -48,9 +48,9 @@ export async function GET() {
 }
 
 // POST /api/conversations - Create a new conversation
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await getAuth(request);
     const user = await currentUser();
     
     if (!userId || !user) {
