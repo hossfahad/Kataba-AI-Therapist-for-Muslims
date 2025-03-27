@@ -1,5 +1,5 @@
 /**
- * Utility for handling custom pronunciation in Cartesia TTS
+ * Utility for handling custom pronunciation in TTS
  */
 
 // Dictionary of words and their phonetic pronunciations
@@ -15,7 +15,7 @@ import { pronunciationDictionary } from './pronunciation-dictionary';
 /**
  * Applies custom pronunciations to text
  * @param text The input text
- * @returns Text with pronunciation markers for Cartesia TTS
+ * @returns Text with pronunciation markers for TTS
  */
 export function applyCustomPronunciations(text: string): string {
   if (!text) return text;

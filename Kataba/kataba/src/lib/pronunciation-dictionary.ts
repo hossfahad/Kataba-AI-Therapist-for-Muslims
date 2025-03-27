@@ -1,7 +1,7 @@
 import { PronunciationEntry } from './pronunciation';
 
 /**
- * Dictionary of custom word pronunciations for Cartesia TTS
+ * Dictionary of custom word pronunciations for TTS
  * 
  * Format:
  * { 

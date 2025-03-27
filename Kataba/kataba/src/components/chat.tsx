@@ -137,12 +137,12 @@ export const Chat = () => {
     }
   }, [messages, streamedText]);
 
-  const speakWithCartesia = async (text: string) => {
+  const speakText = async (text: string) => {
     try {
       // Return early if text is empty or audio is muted
       if (!text || isMuted) return;
       
-      // Call Cartesia API through our backend
+      // Call our TTS API endpoint
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: {
@@ -151,45 +151,15 @@ export const Chat = () => {
         body: JSON.stringify({ text }),
       });
       
-      // Check if we're using the fallback
-      const isFallback = response.headers.get('X-TTS-Fallback') === 'true';
-      
-      if (isFallback) {
-        // Use the browser's native TTS as a fallback
-        const data = await response.json();
+      // Since we've removed Cartesia, we'll always be using the browser's TTS
+      const data = await response.json();
+      if (data.fallback && data.text) {
         const utterance = new SpeechSynthesisUtterance(data.text);
         window.speechSynthesis.speak(utterance);
-        return;
-      }
-      
-      if (!response.ok) {
-        throw new Error(`Failed to get TTS: ${response.status}`);
-      }
-      
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        
-        try {
-          // Try to play the audio
-          await audioRef.current.play().catch((e) => {
-            console.warn('Audio play failed, falling back to browser TTS:', e);
-            // Fall back to browser TTS if autoplay is blocked
-            const utterance = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(utterance);
-          });
-        } catch (playError) {
-          console.warn('Audio play error, using fallback:', playError);
-          // Fall back to browser TTS
-          const utterance = new SpeechSynthesisUtterance(text);
-          window.speechSynthesis.speak(utterance);
-        }
       }
     } catch (error) {
       console.error('Error with TTS:', error);
-      // Fall back to browser TTS
+      // Fall back to direct browser TTS if our API fails
       const utterance = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.speak(utterance);
     }
@@ -232,7 +202,7 @@ export const Chat = () => {
       // Start TTS only if not muted
       if (!isMuted && response) {
         // Fire and forget - this will play in the background while we stream text
-        speakWithCartesia(response);
+        speakText(response);
       }
       
       // Split response into words and display them one by one
