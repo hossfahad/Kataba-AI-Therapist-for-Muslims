@@ -3,10 +3,7 @@ import { getAuth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/conversations/[id] - Get a specific conversation
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const { userId } = getAuth(request);
     
@@ -17,7 +14,15 @@ export async function GET(
       );
     }
     
-    const conversationId = params.id;
+    // Extract conversation ID from the URL pathname
+    const conversationId = request.nextUrl.pathname.split('/').pop();
+    
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: 'Missing conversation ID' },
+        { status: 400 }
+      );
+    }
     
     const conversation = await prisma.conversation.findUnique({
       where: {
@@ -52,10 +57,7 @@ export async function GET(
 }
 
 // PUT /api/conversations/[id] - Update a conversation
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest) {
   try {
     const { userId } = getAuth(request);
     
@@ -66,7 +68,16 @@ export async function PUT(
       );
     }
     
-    const conversationId = params.id;
+    // Extract conversation ID from the URL pathname
+    const conversationId = request.nextUrl.pathname.split('/').pop();
+    
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: 'Missing conversation ID' },
+        { status: 400 }
+      );
+    }
+    
     const { title, messages } = await request.json();
     
     // First, verify the conversation exists and belongs to the user
@@ -138,10 +149,7 @@ export async function PUT(
 }
 
 // DELETE /api/conversations/[id] - Delete a conversation
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
     const { userId } = getAuth(request);
     
@@ -152,7 +160,15 @@ export async function DELETE(
       );
     }
     
-    const conversationId = params.id;
+    // Extract conversation ID from the URL pathname
+    const conversationId = request.nextUrl.pathname.split('/').pop();
+    
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: 'Missing conversation ID' },
+        { status: 400 }
+      );
+    }
     
     // First, verify the conversation exists and belongs to the user
     const existingConversation = await prisma.conversation.findUnique({
