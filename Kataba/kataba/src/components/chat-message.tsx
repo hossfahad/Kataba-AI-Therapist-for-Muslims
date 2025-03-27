@@ -35,6 +35,9 @@ export const ChatMessage = ({
     }
   }, [displayedContent, isUser]);
 
+  // Ensure timestamp is a valid Date object
+  const messageTime = timestamp instanceof Date ? timestamp : new Date();
+
   return (
     <div 
       className={cn(
@@ -60,7 +63,7 @@ export const ChatMessage = ({
           )}
         </p>
         <time className="block mt-2 text-[10px] opacity-70 font-light">
-          {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {messageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </time>
       </div>
     </div>
