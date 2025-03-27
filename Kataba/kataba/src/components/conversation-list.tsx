@@ -16,20 +16,27 @@ export const ConversationList = () => {
     messages,
     clearMessages,
     conversationId,
-    setAuthenticated
+    setAuthenticated,
+    isAuthenticated
   } = useChatStore();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authenticated, setAuthenticatedState] = useState(false);
   
   // Set authentication status when user auth state changes
   useEffect(() => {
     if (user && isSignedIn) {
       setAuthenticated(true, user.id);
+      setAuthenticatedState(true);
     } else {
       setAuthenticated(false);
+      setAuthenticatedState(false);
     }
   }, [user, isSignedIn, setAuthenticated]);
+
+  // Track active conversation status
+  const isActive = conversationId !== null;
   
   const handleLoadConversation = async (id: string) => {
     setIsLoading(true);
@@ -66,8 +73,23 @@ export const ConversationList = () => {
     
     setIsLoading(true);
     setError(null);
+    
     try {
-      await saveConversation();
+      // If this is a new conversation, prompt for a title
+      let title;
+      if (!conversationId) {
+        title = prompt('Enter a title for this conversation:', 
+          messages[0]?.content.slice(0, 30) + '...'
+        );
+        
+        // If user cancels the prompt, abort the save
+        if (title === null) {
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      await saveConversation(title);
     } catch (err) {
       setError('Failed to save conversation');
       console.error(err);
@@ -124,13 +146,21 @@ export const ConversationList = () => {
             {savedConversations.map((convo) => (
               <li 
                 key={convo.id}
-                className={`p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-100 ${
-                  conversationId === convo.id ? 'bg-gray-100' : ''
-                }`}
+                className={`p-2 rounded-md cursor-pointer transition-colors
+                  ${conversationId === convo.id 
+                    ? 'bg-teal-50 border border-teal-200' 
+                    : 'hover:bg-gray-100 border border-transparent'
+                  }`}
                 onClick={() => handleLoadConversation(convo.id)}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1 truncate">
+                    {conversationId === convo.id && (
+                      <div className="flex items-center gap-1 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse-soft"></div>
+                        <span className="text-xs text-teal-600 font-medium">Active</span>
+                      </div>
+                    )}
                     <p className="text-sm font-medium text-gray-700 truncate">{convo.title}</p>
                     <p className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(convo.updatedAt), { addSuffix: true })}
