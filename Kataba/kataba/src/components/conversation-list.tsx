@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/nextjs';
 import { formatDistanceToNow } from 'date-fns';
 
-export const ConversationList = () => {
+interface ConversationListProps {
+  onConversationSelect?: () => void;
+}
+
+export const ConversationList = ({ onConversationSelect }: ConversationListProps) => {
   const { user, isSignedIn } = useUser();
   const {
     savedConversations,
@@ -39,6 +43,10 @@ export const ConversationList = () => {
     setError(null);
     try {
       await loadConversation(id);
+      // Call the callback if provided
+      if (onConversationSelect) {
+        onConversationSelect();
+      }
     } catch (err) {
       setError('Failed to load conversation');
       console.error(err);
@@ -96,6 +104,9 @@ export const ConversationList = () => {
   
   const handleNewConversation = () => {
     clearMessages();
+    if (onConversationSelect) {
+      onConversationSelect();
+    }
   };
   
   // If user is not signed in, show a message
@@ -110,7 +121,6 @@ export const ConversationList = () => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-medium text-gray-700">Your Conversations</h3>
         <div className="flex space-x-2">
           <Button
             onClick={handleNewConversation}
@@ -118,7 +128,7 @@ export const ConversationList = () => {
             size="sm"
             className="text-xs"
           >
-            New
+            New Chat
           </Button>
           <Button
             onClick={handleSaveConversation}
@@ -127,7 +137,7 @@ export const ConversationList = () => {
             className="text-xs"
             disabled={isLoading || messages.length === 0}
           >
-            Save
+            Save Current
           </Button>
         </div>
       </div>
@@ -136,16 +146,19 @@ export const ConversationList = () => {
       
       <div className="overflow-y-auto flex-grow">
         {savedConversations.length === 0 ? (
-          <p className="text-center text-sm text-gray-500 py-4">No saved conversations</p>
+          <div className="text-center py-8">
+            <p className="text-sm text-gray-500">No saved conversations yet</p>
+            <p className="text-xs text-gray-400 mt-2">Start a new chat and save it to see it here</p>
+          </div>
         ) : (
           <ul className="space-y-2">
             {savedConversations.map((convo) => (
               <li 
                 key={convo.id}
-                className={`p-2 rounded-md cursor-pointer transition-colors
+                className={`p-3 rounded-md cursor-pointer transition-colors
                   ${conversationId === convo.id 
                     ? 'bg-teal-50 border border-teal-200' 
-                    : 'hover:bg-gray-100 border border-transparent'
+                    : 'hover:bg-gray-50 border border-transparent'
                   }`}
                 onClick={() => handleLoadConversation(convo.id)}
               >

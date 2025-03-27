@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from '@/lib/prisma';
-import { OpenAIStream, StreamingTextResponse } from 'ai';
 import OpenAI from 'openai';
 
 // Initialize OpenAI client (server-side only)
@@ -58,7 +57,10 @@ export async function POST(request: NextRequest) {
         })),
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1200,
+      top_p: 0.9,
+      frequency_penalty: 0.3,
+      presence_penalty: 0.5
     });
     
     // Return the response

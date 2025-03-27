@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import "@/components/ui/styles.css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -39,30 +43,86 @@ export const ChatMessage = ({
   const messageTime = timestamp instanceof Date ? timestamp : new Date();
 
   return (
-    <div 
-      className={cn(
-        "w-full mb-4 animate-slide-in floating-container",
-        isUser ? "flex justify-end" : "flex justify-start"
-      )}
-    >      
-      <div 
-        className={cn(
-          "relative max-w-[85%] p-4 rounded-2xl",
-          isUser 
-            ? "gradient-teal text-white shadow-md shadow-teal-200/20" 
-            : "glass-bubble text-gray-800"
-        )}
-      >
-        <p 
-          ref={messageRef} 
-          className="text-base font-medium leading-relaxed font-['Inter','Open Sans',sans-serif]"
-        >
-          {displayText}
-          {!isUser && isStreaming && (
-            <span className="inline-block w-2 h-5 ml-1 bg-current animate-pulse-soft" />
+    <div className="w-full my-5 animate-slide-in">      
+      <div className={cn(
+        "px-2",
+        isUser ? "text-right" : "text-left"
+      )}>
+        <div className="mb-1">
+          <span className={cn(
+            "text-xs font-medium",
+            isUser ? "text-teal-600" : "text-gray-500"
+          )}>
+            {isUser ? "You" : "Kataba"}
+          </span>
+        </div>
+        
+        <div
+          ref={messageRef}
+          className={cn(
+            "markdown-content text-base leading-relaxed font-['Inter','Open Sans',sans-serif]",
+            isUser ? "text-teal-700" : "text-gray-800"
           )}
-        </p>
-        <time className="block mt-2 text-[10px] opacity-70 font-light">
+        >
+          {isUser ? (
+            // User messages don't need markdown
+            <p>{displayText}</p>
+          ) : (
+            // Assistant messages use markdown
+            <>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                components={{
+                  p: ({ node, ...props }) => (
+                    <p className="mb-3 last:mb-0" {...props} />
+                  ),
+                  ul: ({ node, ...props }) => (
+                    <ul className="list-disc pl-5 mb-3" {...props} />
+                  ),
+                  ol: ({ node, ...props }) => (
+                    <ol className="list-decimal pl-5 mb-3" {...props} />
+                  ),
+                  li: ({ node, ...props }) => (
+                    <li className="mb-1" {...props} />
+                  ),
+                  h1: ({ node, ...props }) => (
+                    <h1 className="text-xl font-medium mb-3 mt-4" {...props} />
+                  ),
+                  h2: ({ node, ...props }) => (
+                    <h2 className="text-lg font-medium mb-3 mt-4" {...props} />
+                  ),
+                  h3: ({ node, ...props }) => (
+                    <h3 className="text-md font-medium mb-2 mt-3" {...props} />
+                  ),
+                  blockquote: ({ node, ...props }) => (
+                    <blockquote className="border-l-4 border-gray-200 pl-4 italic my-3" {...props} />
+                  ),
+                  a: ({ node, ...props }) => (
+                    <a className="text-teal-600 hover:underline" {...props} />
+                  ),
+                  code: ({ node, className, ...props }: any) => {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const isInline = !match && !props.block;
+                    return isInline 
+                      ? <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />
+                      : <code className="block bg-gray-100 p-2 rounded-md my-3 text-sm font-mono whitespace-pre-wrap" {...props} />;
+                  },
+                  pre: ({ node, ...props }) => (
+                    <pre className="bg-gray-100 p-2 rounded-md my-3 overflow-auto" {...props} />
+                  ),
+                }}
+              >
+                {displayText}
+              </ReactMarkdown>
+              {isStreaming && (
+                <span className="inline-block w-2 h-5 ml-1 bg-current animate-pulse-soft" />
+              )}
+            </>
+          )}
+        </div>
+        
+        <time className="block mt-1 text-[10px] text-gray-400 font-light">
           {messageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </time>
       </div>

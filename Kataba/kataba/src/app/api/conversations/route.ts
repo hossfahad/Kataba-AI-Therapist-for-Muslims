@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
     const { userId } = await getAuth(request);
     const user = await currentUser();
     
+    console.log("POST /api/conversations - Auth check:", { userId, isAuthenticated: !!user });
+    
     if (!userId || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -60,39 +62,87 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { title, messages } = await request.json();
-    
-    if (!title || !messages || !Array.isArray(messages) || messages.length === 0) {
+    let requestBody;
+    try {
+      requestBody = await request.json();
+      console.log("Request body received:", {
+        title: requestBody.title,
+        messagesCount: requestBody.messages?.length || 0
+      });
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
       return NextResponse.json(
-        { error: 'Invalid request body' },
+        { error: 'Invalid request format' },
         { status: 400 }
       );
     }
     
-    // Store the conversation in the database
-    const conversation = await prisma.conversation.create({
-      data: {
-        title,
-        userId,
-        messages: {
-          create: messages.map((message: ChatMessage) => ({
-            role: message.role,
-            content: message.content,
-            timestamp: message.timestamp || new Date(),
-          })),
+    const { title, messages } = requestBody;
+    
+    if (!title || !messages || !Array.isArray(messages) || messages.length === 0) {
+      console.error("Invalid request body:", { title, messages });
+      return NextResponse.json(
+        { error: 'Invalid request body - missing title or messages' },
+        { status: 400 }
+      );
+    }
+    
+    console.log("Attempting to connect to database and create conversation");
+    
+    try {
+      // Store the conversation in the database
+      const conversation = await prisma.conversation.create({
+        data: {
+          title,
+          userId,
+          messages: {
+            create: messages.map((message: ChatMessage) => ({
+              role: message.role,
+              content: message.content,
+              timestamp: message.timestamp || new Date(),
+            })),
+          },
         },
-      },
-      include: {
-        messages: true,
-      },
-    });
-    
-    return NextResponse.json(conversation);
-    
-  } catch (error) {
-    console.error('Error creating conversation:', error);
+        include: {
+          messages: true,
+        },
+      });
+      
+      console.log("Conversation created successfully with ID:", conversation.id);
+      return NextResponse.json(conversation);
+    } catch (dbError: any) {
+      console.error("Database error creating conversation:", {
+        error: dbError.message,
+        code: dbError.code,
+        meta: dbError.meta
+      });
+      
+      if (dbError.code === 'P1001') {
+        return NextResponse.json(
+          { error: 'Cannot reach database server' },
+          { status: 503 }
+        );
+      } else if (dbError.code === 'P1003') {
+        return NextResponse.json(
+          { error: 'Database does not exist or is unavailable' },
+          { status: 503 }
+        );
+      } else if (dbError.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'A resource with this ID already exists' },
+          { status: 409 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: `Database error: ${dbError.message}` },
+          { status: 500 }
+        );
+      }
+    }
+  } catch (error: any) {
+    console.error('Unhandled error creating conversation:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: `Internal server error: ${error.message}` },
       { status: 500 }
     );
   }

@@ -16,6 +16,7 @@ interface ChatState {
   userId: string | null;
   conversationId: string | null;
   savedConversations: { id: string; title: string; updatedAt: Date }[];
+  lastAutoSaveTime: number;
   
   setAuthenticated: (isAuthenticated: boolean, userId?: string | null) => void;
   addMessage: (message: { role: 'user' | 'assistant'; content: string; }) => string;
@@ -27,12 +28,19 @@ interface ChatState {
   loadConversation: (conversationId: string) => Promise<void>;
   getSavedConversations: () => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
+  autoSaveConversation: () => Promise<void>;
 }
 
 // Generate a unique ID for messages
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
+
+// Auto-save delay in milliseconds (3 seconds)
+const AUTO_SAVE_DELAY = 3000;
+
+// Minimum messages needed before auto-saving
+const MIN_MESSAGES_FOR_AUTOSAVE = 2;
 
 // Create the store with persistence
 export const useChatStore = create<ChatState>()(
@@ -45,6 +53,7 @@ export const useChatStore = create<ChatState>()(
       userId: null,
       conversationId: null,
       savedConversations: [],
+      lastAutoSaveTime: 0,
       
       setAuthenticated: (isAuthenticated, userId = null) => {
         set({ isAuthenticated, userId });
@@ -65,6 +74,14 @@ export const useChatStore = create<ChatState>()(
             { id, role: message.role, content: message.content, timestamp }
           ]
         }));
+        
+        // Try to auto-save after a brief delay
+        // This allows for subsequent messages to be added (like AI responses)
+        // before auto-saving occurs
+        setTimeout(() => {
+          get().autoSaveConversation();
+        }, AUTO_SAVE_DELAY);
+        
         return id;
       },
       
@@ -78,6 +95,11 @@ export const useChatStore = create<ChatState>()(
               : message
           )
         }));
+        
+        // Try to auto-save after a message is updated
+        setTimeout(() => {
+          get().autoSaveConversation();
+        }, AUTO_SAVE_DELAY);
       },
       
       setLoading: (isLoading) => {
@@ -92,10 +114,48 @@ export const useChatStore = create<ChatState>()(
         set({ messages: [], conversationId: null });
       },
       
+      autoSaveConversation: async () => {
+        const { messages, userId, conversationId, isAuthenticated, lastAutoSaveTime } = get();
+        
+        // Only auto-save if:
+        // 1. User is authenticated
+        // 2. There are enough messages to save
+        // 3. We haven't auto-saved too recently
+        // 4. The conversation is not already saved or has new messages since last save
+        const now = Date.now();
+        if (
+          !isAuthenticated || 
+          !userId || 
+          messages.length < MIN_MESSAGES_FOR_AUTOSAVE ||
+          now - lastAutoSaveTime < AUTO_SAVE_DELAY
+        ) {
+          return;
+        }
+        
+        try {
+          // Update the last auto-save time
+          set({ lastAutoSaveTime: now });
+          
+          // Generate a title from the first user message
+          const firstUserMessage = messages.find(m => m.role === 'user');
+          if (!firstUserMessage) return;
+          
+          const title = firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? "..." : "");
+          
+          // Call the save function
+          await get().saveConversation(title);
+          
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+          // Don't throw the error - just log it to avoid disrupting the UI
+        }
+      },
+      
       saveConversation: async (title) => {
         const { messages, userId, conversationId } = get();
         
         if (!userId || messages.length === 0) {
+          console.error("Cannot save conversation - user not authenticated or no messages", { userId, messagesLength: messages.length });
           throw new Error("Cannot save conversation - user not authenticated or no messages");
         }
         
@@ -108,6 +168,12 @@ export const useChatStore = create<ChatState>()(
             ? `/api/conversations/${conversationId}`
             : '/api/conversations';
             
+          console.log(`Saving conversation to ${endpoint} with method ${method}`, { 
+            title: conversationTitle,
+            messagesCount: messages.length,
+            userId 
+          });
+          
           const response = await fetch(endpoint, {
             method,
             headers: {
@@ -120,19 +186,35 @@ export const useChatStore = create<ChatState>()(
             }),
           });
           
-          if (!response.ok) {
-            throw new Error("Failed to save conversation");
+          // Log the response status and details
+          console.log(`Save conversation response status: ${response.status}`);
+          const responseText = await response.text();
+          
+          try {
+            // Try to parse the response as JSON
+            const data = JSON.parse(responseText);
+            console.log('Response data:', data);
+            
+            if (!response.ok) {
+              console.error(`Server error: ${data.error || 'Unknown error'}`);
+              throw new Error(data.error || "Failed to save conversation");
+            }
+            
+            // Update the conversation ID and last auto-save time in the store
+            set({ 
+              conversationId: data.id,
+              lastAutoSaveTime: Date.now()
+            });
+            
+            // Refresh the list of saved conversations
+            await get().getSavedConversations();
+            
+            return data.id;
+          } catch (parseError) {
+            // If the response isn't valid JSON, log the raw text
+            console.error('Could not parse response as JSON:', responseText);
+            throw new Error(`Failed to save conversation. Server response: ${responseText}`);
           }
-          
-          const data = await response.json();
-          
-          // Update the conversation ID in the store
-          set({ conversationId: data.id });
-          
-          // Refresh the list of saved conversations
-          await get().getSavedConversations();
-          
-          return data.id;
           
         } catch (error) {
           console.error("Error saving conversation:", error);
@@ -164,7 +246,8 @@ export const useChatStore = create<ChatState>()(
           // Update the messages and conversation ID in the store
           set({ 
             messages: data.messages,
-            conversationId: data.id
+            conversationId: data.id,
+            lastAutoSaveTime: Date.now() // Reset auto-save timer when loading a conversation
           });
           
         } catch (error) {

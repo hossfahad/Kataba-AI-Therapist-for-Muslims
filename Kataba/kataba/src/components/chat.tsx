@@ -1,8 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { ChatMessage } from "./chat-message";
 import { useChatStore } from "@/lib/store";
 import { getChatCompletion } from "@/lib/openai";
@@ -29,7 +27,7 @@ export const Chat = () => {
   } = useChatStore();
   
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Streaming state
@@ -37,6 +35,18 @@ export const Chat = () => {
   const [streamedText, setStreamedText] = useState("");
   const [currentAssistantMessageId, setCurrentAssistantMessageId] = useState<string | null>(null);
   const [isApiAvailable, setIsApiAvailable] = useState(true);
+
+  // Simple scroll to bottom function without any complex behavior
+  const scrollToBottom = useCallback(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, []);
+
+  // Ensure we scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, streamedText, scrollToBottom]);
 
   useEffect(() => {
     // Create an audio element for playing TTS
@@ -108,36 +118,6 @@ export const Chat = () => {
     };
   }, []);
 
-  // Always scroll to bottom whenever messages change
-  useEffect(() => {
-    if (scrollRef.current) {
-      const scrollContainer = scrollRef.current;
-      scrollContainer.scrollTo({
-        top: scrollContainer.scrollHeight,
-        behavior: 'auto' // Use 'auto' instead of 'smooth' to prevent animation
-      });
-      
-      // Set up MutationObserver to watch for changes in chat content and scroll to bottom
-      const observer = new MutationObserver(() => {
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollHeight,
-          behavior: 'auto'
-        });
-      });
-      
-      // Watch for changes in the scroll container and its descendants
-      if (scrollContainer.firstElementChild) {
-        observer.observe(scrollContainer.firstElementChild, {
-          childList: true,
-          subtree: true,
-          characterData: true
-        });
-      }
-      
-      return () => observer.disconnect();
-    }
-  }, [messages, streamedText]);
-
   const speakText = async (text: string) => {
     try {
       // Return early if text is empty or audio is muted
@@ -177,6 +157,9 @@ export const Chat = () => {
 
     // Add user message
     addMessage({ role: 'user', content });
+    
+    // Force scroll to bottom after adding user message
+    scrollToBottom();
 
     try {
       setLoading(true);
@@ -193,6 +176,9 @@ export const Chat = () => {
         content: '' 
       });
       setCurrentAssistantMessageId(assistantMessageId);
+      
+      // Force scroll to bottom after adding placeholder assistant message
+      scrollToBottom();
       
       // Get the full response - pass the conversationId
       const response = await getChatCompletion(chatMessages, conversationId);
@@ -214,6 +200,11 @@ export const Chat = () => {
         await new Promise(resolve => setTimeout(resolve, 50)); // Adjust timing as needed
         const partialResponse = words.slice(0, i + 1).join(' ');
         setStreamedText(partialResponse);
+        
+        // Scroll to bottom periodically as new content is added
+        if (i % 10 === 0) {
+          scrollToBottom();
+        }
       }
       
       // Update the assistant message with the full content
@@ -221,6 +212,9 @@ export const Chat = () => {
         role: 'assistant',
         content: response
       });
+      
+      // Final scroll after response is complete
+      scrollToBottom();
       
     } catch (error) {
       console.error('Error:', error);
@@ -231,6 +225,9 @@ export const Chat = () => {
         role: 'assistant',
         content: 'I apologize, but I encountered an error. Please try again.',
       });
+      
+      // Scroll to error message
+      scrollToBottom();
     } finally {
       setLoading(false);
       setIsStreaming(false);
@@ -246,82 +243,96 @@ export const Chat = () => {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4 relative overflow-hidden rounded-xl glass-panel">
+    <div className="flex h-full flex-col gap-2 relative overflow-hidden rounded-lg bg-white/50">
       {/* Chat header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isApiAvailable ? 'bg-teal-500 animate-pulse-soft' : 'bg-gray-300'}`}></div>
-          <span className="text-sm font-medium text-gray-700">{isApiAvailable ? 'Active Conversation' : 'Inactive Conversation'}</span>
+          <span className="text-sm font-medium text-gray-700">Conversation</span>
         </div>
-        <Button
-          onClick={toggleMute}
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "rounded-md px-2", 
-            isMuted ? "text-gray-300" : "text-teal-500"
-          )}
-          aria-label={isMuted ? "Enable audio" : "Disable audio"}
-          title={isMuted ? "Enable audio" : "Disable audio"}
-        >
-          {isMuted ? (
-            <div className="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-              <span className="text-xs font-medium">Voice: Off</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-              <span className="text-xs font-medium">Voice: On</span>
-            </div>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={scrollToBottom}
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-gray-600"
+            aria-label="Scroll to bottom"
+            title="Scroll to bottom"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </Button>
+          <Button
+            onClick={toggleMute}
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "rounded-md px-2", 
+              isMuted ? "text-gray-300" : "text-teal-500"
+            )}
+            aria-label={isMuted ? "Enable audio" : "Disable audio"}
+            title={isMuted ? "Enable audio" : "Disable audio"}
+          >
+            {isMuted ? (
+              <div className="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                <span className="text-xs font-medium hidden sm:inline">Voice: Off</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                <span className="text-xs font-medium hidden sm:inline">Voice: On</span>
+              </div>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Messages area */}
-      <ScrollArea 
-        className="flex-1 px-4 py-2 overflow-y-auto scroll-auto custom-scrollbar" 
-        ref={scrollRef}
+      <div 
+        id="chat-container"
+        className="flex-1 px-4 py-2 overflow-y-auto scroll-auto custom-scrollbar"
+        ref={chatContainerRef}
       >
-        <div className="flex flex-col">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 animate-bounce-soft"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <p className="text-base font-medium">Start a conversation to begin</p>
-            </div>
-          ) : (
-            messages.map((message: Message) => (
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 animate-bounce-soft"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <p className="text-base font-medium">Start a conversation to begin</p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {messages.map((message: Message) => (
               <ChatMessage 
-                key={message.id} 
+                key={message.id}
                 role={message.role}
                 content={message.content}
                 timestamp={message.timestamp}
                 isStreaming={isStreaming && message.id === currentAssistantMessageId}
                 displayedContent={message.id === currentAssistantMessageId ? streamedText : undefined}
               />
-            ))
-          )}
-          {isLoading && !isStreaming && (
-            <div className="flex items-center gap-3 text-sm text-gray-500 py-3 px-4 self-start bg-white/80 backdrop-blur-sm border border-gray-100 rounded-full shadow-sm mt-4 animate-pulse-soft">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "0ms" }}></div>
-                <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "200ms" }}></div>
-                <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "400ms" }}></div>
+            ))}
+            {isLoading && !isStreaming && (
+              <div className="text-sm text-gray-500 py-2 px-1 mt-4">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "0ms" }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "200ms" }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "400ms" }}></div>
+                </div>
               </div>
-              <span className="font-medium">Thinking...</span>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Input area */}
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-3 border-t border-gray-100">
         <div className="flex items-center gap-2 relative">
           <Textarea
             ref={inputRef}
-            placeholder={isApiAvailable ? "Say Bismillah and type away..." : "API unavailable. Please try again later."}
+            placeholder={isApiAvailable ? "Type your message..." : "API unavailable. Please try again later."}
             className={cn(
-              "min-h-[60px] max-h-[120px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-gray-300",
+              "min-h-[50px] max-h-[100px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-gray-300",
               !isApiAvailable && "opacity-50"
             )}
             onKeyDown={handleKeyDown}
@@ -331,7 +342,7 @@ export const Chat = () => {
             onClick={handleSubmit}
             disabled={isLoading || !isApiAvailable}
             className={cn(
-              "bg-teal-600 hover:bg-teal-700 text-black rounded-full h-12 w-12 p-0 flex items-center justify-center self-center shadow-md shadow-teal-200/30",
+              "bg-teal-600 hover:bg-teal-700 text-white rounded-lg h-10 w-10 p-0 flex items-center justify-center self-center",
               !isApiAvailable && "opacity-50 cursor-not-allowed"
             )}
             aria-label="Send message"
