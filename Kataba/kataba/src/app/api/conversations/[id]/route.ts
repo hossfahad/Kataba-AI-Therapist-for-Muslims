@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 // GET /api/conversations/[id] - Get a specific conversation
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const { userId } = getAuth(request);
@@ -17,7 +17,7 @@ export async function GET(
       );
     }
     
-    const conversationId = context.params.id;
+    const conversationId = params.id;
     
     const conversation = await prisma.conversation.findUnique({
       where: {
@@ -54,7 +54,7 @@ export async function GET(
 // PUT /api/conversations/[id] - Update a conversation
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const { userId } = getAuth(request);
@@ -66,7 +66,7 @@ export async function PUT(
       );
     }
     
-    const conversationId = context.params.id;
+    const conversationId = params.id;
     const { title, messages } = await request.json();
     
     // First, verify the conversation exists and belongs to the user
@@ -140,7 +140,7 @@ export async function PUT(
 // DELETE /api/conversations/[id] - Delete a conversation
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const { userId } = getAuth(request);
@@ -152,7 +152,7 @@ export async function DELETE(
       );
     }
     
-    const conversationId = context.params.id;
+    const conversationId = params.id;
     
     // First, verify the conversation exists and belongs to the user
     const existingConversation = await prisma.conversation.findUnique({
