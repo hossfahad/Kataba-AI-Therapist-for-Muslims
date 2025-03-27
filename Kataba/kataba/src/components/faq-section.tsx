@@ -62,7 +62,7 @@ const faqItems: FaqItem[] = [
     question: "Does Kataba offer religious advice or fatwas?",
     answer: (
       <p>
-        No, Kataba is not a religious authority and does not issue fatwas. While it incorporates Islamic values and therapeutic principles, it is designed for reflection and emotional support rather than providing religious rulings. In the future, we plan to incorporate references to the Qur'an and authentic Hadith.
+        No, Kataba is not a religious authority and does not issue fatwas. While it incorporates Islamic values and therapeutic principles, it is designed for reflection and emotional support rather than providing religious rulings. In the future, we plan to incorporate references to the Qur&apos;an and authentic Hadith.
       </p>
     ),
   },
@@ -94,7 +94,7 @@ const faqItems: FaqItem[] = [
     question: "How does Kataba compare to other AI companions?",
     answer: (
       <p>
-        Unlike generic AI chatbots, Kataba is built with a focus on <strong>spiritual and emotional well-being</strong>, incorporating an understanding of Islamic ethics, values, and mental health principles. It's designed to be a <strong>companion on your journey</strong>, not just a conversation tool.
+        Unlike generic AI chatbots, Kataba is built with a focus on <strong>spiritual and emotional well-being</strong>, incorporating an understanding of Islamic ethics, values, and mental health principles. It&apos;s designed to be a <strong>companion on your journey</strong>, not just a conversation tool.
       </p>
     ),
   },

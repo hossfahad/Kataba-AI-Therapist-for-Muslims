@@ -68,7 +68,7 @@ export async function POST(req: Request) {
   console.log(`Webhook received: ${eventType}`);
 
   if (eventType === 'user.created' || eventType === 'user.updated') {
-    const { id: clerkId, email_addresses, first_name, last_name, image_url, created_at } = event.data;
+    const { id: clerkId, email_addresses, first_name, last_name, image_url } = event.data;
     
     // Get the primary email
     const primaryEmail = email_addresses[0]?.email_address || '';
