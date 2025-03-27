@@ -320,7 +320,7 @@ export const Chat = () => {
             ref={inputRef}
             placeholder={isApiAvailable ? "Say Bismillah and type away..." : "API unavailable. Please try again later."}
             className={cn(
-              "min-h-[60px] max-h-[120px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-teal-200",
+              "min-h-[60px] max-h-[120px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-gray-300",
               !isApiAvailable && "opacity-50"
             )}
             onKeyDown={handleKeyDown}
@@ -330,7 +330,7 @@ export const Chat = () => {
             onClick={handleSubmit}
             disabled={isLoading || !isApiAvailable}
             className={cn(
-              "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full h-12 w-12 p-0 flex items-center justify-center self-center shadow-md shadow-teal-200/30",
+              "bg-teal-600 hover:bg-teal-700 text-black rounded-full h-12 w-12 p-0 flex items-center justify-center self-center shadow-md shadow-teal-200/30",
               !isApiAvailable && "opacity-50 cursor-not-allowed"
             )}
             aria-label="Send message"
