@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { ChatMessage } from "./chat-message";
 import { useChatStore } from "@/lib/store";
 import { getChatCompletion } from "@/lib/openai";
@@ -20,6 +21,7 @@ export const Chat = () => {
     messages, 
     isLoading, 
     isMuted, 
+    conversationId,
     addMessage, 
     updateMessage, 
     setLoading, 
@@ -192,8 +194,8 @@ export const Chat = () => {
       });
       setCurrentAssistantMessageId(assistantMessageId);
       
-      // Get the full response
-      const response = await getChatCompletion(chatMessages);
+      // Get the full response - pass the conversationId
+      const response = await getChatCompletion(chatMessages, conversationId);
       
       // API is working if we got here
       setIsApiAvailable(true);

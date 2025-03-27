@@ -1,7 +1,10 @@
 /**
  * Gets a completion from the chat model
  */
-export async function getChatCompletion(messages: { role: 'user' | 'assistant'; content: string }[]) {
+export async function getChatCompletion(
+  messages: { role: 'user' | 'assistant'; content: string }[], 
+  conversationId?: string | null
+) {
   try {
     // Call our own API endpoint that will safely use the OpenAI API server-side
     const response = await fetch('/api/chat', {
@@ -9,7 +12,10 @@ export async function getChatCompletion(messages: { role: 'user' | 'assistant'; 
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ 
+        messages,
+        conversationId 
+      }),
     });
     
     if (!response.ok) {
