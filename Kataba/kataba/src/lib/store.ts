@@ -19,7 +19,7 @@ interface ChatState {
   
   setAuthenticated: (isAuthenticated: boolean, userId?: string | null) => void;
   addMessage: (message: { role: 'user' | 'assistant'; content: string; }) => string;
-  updateMessage: (id: string, content: string) => void;
+  updateMessage: (id: string, update: string | { role: 'user' | 'assistant'; content: string; }) => void;
   setLoading: (isLoading: boolean) => void;
   toggleMute: () => void;
   clearMessages: () => void;
@@ -68,11 +68,23 @@ export const useChatStore = create<ChatState>()(
         return id;
       },
       
-      updateMessage: (id, content) => {
+      updateMessage: (id, update) => {
         set((state) => ({
-          messages: state.messages.map((message) =>
-            message.id === id ? { ...message, content } : message
-          )
+          messages: state.messages.map((message) => {
+            if (message.id === id) {
+              // Handle either string content update or object update
+              if (typeof update === 'string') {
+                return { ...message, content: update };
+              } else {
+                return { 
+                  ...message, 
+                  content: update.content,
+                  role: update.role 
+                };
+              }
+            }
+            return message;
+          })
         }));
       },
       
