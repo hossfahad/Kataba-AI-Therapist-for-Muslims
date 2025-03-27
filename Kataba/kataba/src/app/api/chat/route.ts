@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { auth, currentUser } from '@clerk/nextjs';
+import { prisma } from '@/lib/prisma';
 
 // Initialize OpenAI client (server-side only)
 const openai = new OpenAI({
@@ -22,7 +24,7 @@ Conversational Rules for Kataba:
 • Kataba does not offer generic platitudes simply (e.g., "It's okay, everyone feels that way"). Instead, she seeks to understand deeply before offering responses.
 • Kataba always responds in first-person (e.g., "I understand why that might be difficult for you.")
 • Kataba generally stays within 800 characters at a time. If there is more, she will break it into multiple messages naturally. This will also include pauses.
-• Kataba will usually pause before asking a question using the syntax <break time="1s"/> in between sentences which will allow pausing, they do not need to be separated with adjacent text using a space. This will help to say the question clearly. The following sentence after the question will also be after a slight pause. Try to keep the break withi 1-2 seconds.
+• Kataba will usually pause before asking a question using the syntax "-" in between sentences which will allow pausing, they do not need to be separated with adjacent text using a space. This will help to say the question clearly. The following sentence after the question will also be after a slight pause. Try to keep the break withi 1-2 seconds.
 • Kataba will usually say dates naturally, not numerically. Such as, "Next week, on the 28th of March", or "The 15th of May".
 • Kataba will avoid using quotation marks in the response unless referring to a quote.
 • Kataba will use a space between a URL or email and a question mark. Otherwise, the question mark will be read out. For example, write "Did you send the email to support@cartesia.ai ?" instead of "Did you send the email to support@cartesia.ai?".
@@ -30,8 +32,8 @@ Conversational Rules for Kataba:
 
 export async function POST(req: NextRequest) {
   try {
-    // Get messages from request body
-    const { messages } = await req.json();
+    // Get messages and conversationId from request body
+    const { messages, conversationId } = await req.json();
     
     if (!Array.isArray(messages)) {
       return NextResponse.json(
@@ -39,6 +41,10 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // Get authenticated user
+    const { userId } = auth();
+    const user = await currentUser();
     
     // Verify API key is set
     if (!process.env.OPENAI_API_KEY) {
@@ -63,9 +69,58 @@ export async function POST(req: NextRequest) {
       max_tokens: 500,
     });
     
+    const aiResponse = response.choices[0]?.message?.content || '';
+
+    // If user is authenticated and conversationId is provided, store the messages
+    if (userId && user && conversationId) {
+      try {
+        // Verify the conversation exists and belongs to the user
+        const conversation = await prisma.conversation.findUnique({
+          where: {
+            id: conversationId,
+            userId: userId,
+          },
+        });
+
+        if (conversation) {
+          // Get the last user message
+          const lastUserMessage = messages[messages.length - 1];
+          
+          // Store both the user message and AI response
+          if (lastUserMessage && lastUserMessage.role === 'user') {
+            await prisma.message.createMany({
+              data: [
+                {
+                  conversationId,
+                  role: 'user',
+                  content: lastUserMessage.content,
+                  timestamp: new Date(),
+                },
+                {
+                  conversationId,
+                  role: 'assistant',
+                  content: aiResponse,
+                  timestamp: new Date(),
+                }
+              ]
+            });
+          }
+          
+          // Update conversation's updatedAt timestamp
+          await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { updatedAt: new Date() },
+          });
+        }
+      } catch (dbError) {
+        // Log database error but don't fail the API response
+        console.error('Error storing messages in database:', dbError);
+      }
+    }
+    
     // Return the response
     return NextResponse.json({ 
-      content: response.choices[0]?.message?.content || '',
+      content: aiResponse,
     });
     
   } catch (error: unknown) {
