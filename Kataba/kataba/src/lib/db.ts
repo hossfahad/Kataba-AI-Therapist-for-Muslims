@@ -1,5 +1,7 @@
 import { Pool } from 'pg';
-import { auth, currentUser } from '@clerk/nextjs';
+import { getAuth } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
+import { NextRequest } from 'next/server';
 
 // Create a singleton database connection pool
 const pool = new Pool({
@@ -106,12 +108,12 @@ export async function createSession(userId: string, metadata: any = {}) {
  * Associate the current Clerk session with the database ID
  * (used in API routes for authorization)
  */
-export async function getAuthSession() {
-  const session = auth();
+export async function getAuthSession(request: NextRequest) {
+  const auth = getAuth(request);
   const userId = await getCurrentUserId();
   
   return {
-    ...session,
+    ...auth,
     userId,
   };
 } 

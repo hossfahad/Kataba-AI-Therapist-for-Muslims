@@ -3,9 +3,10 @@ import { Inter } from "next/font/google";
 import "@fontsource/inter/300.css"; // thin
 import "./globals.css";
 import Link from "next/link";
-import { ClerkProvider, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { PrivacyPolicyDialog, TermsOfServiceDialog } from "@/components/legal-dialogs";
+import { HeaderAuth } from "@/components/header-auth";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,28 +42,20 @@ export default function RootLayout({
           <body
             className={`${inter.variable} font-sans antialiased bg-gradient-to-br from-teal-50 to-white min-h-screen flex flex-col`}
           >
-            <header className="w-full py-4 px-6 border-b chat-header bg-white/50 backdrop-blur-sm z-10 animate-fade-in">
+            <header className="w-full py-4 px-4 md:px-6 border-b chat-header bg-white/50 backdrop-blur-sm z-10 animate-fade-in sticky top-0">
               <div className="container max-w-7xl mx-auto flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Link href="/">
-                    <h1 className="text-3xl font-sans font-light text-gray-800 hover:text-teal-500 transition-colors duration-300 cursor-default">كَتَبَ</h1>
+                    <h1 className="text-2xl md:text-3xl font-sans font-light text-gray-800 hover:text-teal-500 transition-colors duration-300 cursor-default">كَتَبَ</h1>
                   </Link>
                 </div>
                 <nav className="flex items-center">
-                  <div className="flex items-center space-x-6">
+                  <div className="hidden md:flex items-center space-x-6">
                     <a href="#" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">About</a>
                     <a href="#how-it-works" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">How it Works</a>
                     <a href="#faq" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">FAQ</a>
                   </div>
-                  <div className="flex items-center ml-6 space-x-4">
-                    <SignInButton mode="modal">
-                      <button className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">Sign In</button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                      <button className="text-sm bg-teal-500 hover:bg-teal-600 text-white py-1 px-3 rounded-md transition-colors duration-300">Sign Up</button>
-                    </SignUpButton>
-                    <UserButton afterSignOutUrl="/" />
-                  </div>
+                  <HeaderAuth />
                 </nav>
               </div>
             </header>
