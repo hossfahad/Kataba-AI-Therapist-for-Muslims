@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { ChatMessage } from "./chat-message";
 import { useChatStore } from "@/lib/store";
 import { getChatCompletion } from "@/lib/openai";

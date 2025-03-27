@@ -1,17 +1,16 @@
-import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs';
+import { NextResponse, NextRequest } from 'next/server';
+import { getAuth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/conversations/[id] - Get a specific conversation
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const { userId } = getAuth(request);
     
-    if (!userId || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -54,14 +53,13 @@ export async function GET(
 
 // PUT /api/conversations/[id] - Update a conversation
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const { userId } = getAuth(request);
     
-    if (!userId || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -106,7 +104,7 @@ export async function PUT(
     
     // Create new messages
     await prisma.message.createMany({
-      data: messages.map((message: any) => ({
+      data: messages.map((message: { role: string; content: string; timestamp?: Date }) => ({
         conversationId,
         role: message.role,
         content: message.content,
@@ -141,14 +139,13 @@ export async function PUT(
 
 // DELETE /api/conversations/[id] - Delete a conversation
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const { userId } = getAuth(request);
     
-    if (!userId || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

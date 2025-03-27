@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Separator } from '@/components/ui/separator';
 
 interface FaqItem {
   question: string;
@@ -13,7 +12,7 @@ const faqItems: FaqItem[] = [
     question: "What is Kataba?",
     answer: (
       <p>
-        Kataba (<em>كَتَبَ</em>) means "to write" in Arabic. In the Islamic tradition, writing is a means of reflection, seeking clarity, and deepening one's connection to the <em>Deen</em>. Kataba is your AI therapeutic companion, designed to provide thoughtful, judgment-free support through conversation—whether you need to express your thoughts, seek guidance, or reflect on life's journey.
+        Kataba (<em>كَتَبَ</em>) means &quot;to write&quot; in Arabic. In the Islamic tradition, writing is a means of reflection, seeking clarity, and deepening one&apos;s connection to the <em>Deen</em>. Kataba is your AI therapeutic companion, designed to provide thoughtful, judgment-free support through conversation—whether you need to express your thoughts, seek guidance, or reflect on life&apos;s journey.
       </p>
     ),
   },

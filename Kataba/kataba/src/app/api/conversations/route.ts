@@ -1,14 +1,13 @@
-import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs';
+import { NextResponse, NextRequest } from 'next/server';
+import { getAuth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/conversations - Get all conversations for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const { userId } = getAuth(request);
     
-    if (!userId || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -42,12 +41,11 @@ export async function GET() {
 }
 
 // POST /api/conversations - Create a new conversation
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const { userId } = getAuth(request);
     
-    if (!userId || !user) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -69,7 +67,7 @@ export async function POST(request: Request) {
         title,
         userId,
         messages: {
-          create: messages.map((message: any) => ({
+          create: messages.map((message: { role: string; content: string; timestamp?: Date }) => ({
             role: message.role,
             content: message.content,
             timestamp: message.timestamp || new Date(),
