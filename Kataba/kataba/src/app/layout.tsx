@@ -5,6 +5,7 @@ import "./globals.css";
 import Link from "next/link";
 import { ClerkProvider, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { PrivacyPolicyDialog, TermsOfServiceDialog } from "@/components/legal-dialogs";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -51,7 +52,7 @@ export default function RootLayout({
                   <div className="flex items-center space-x-6">
                     <a href="#" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">About</a>
                     <a href="#how-it-works" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">How it Works</a>
-                    <a href="#" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">FAQ</a>
+                    <a href="#faq" className="text-sm text-gray-700 hover:text-teal-500 transition-colors duration-300">FAQ</a>
                   </div>
                   <div className="flex items-center ml-6 space-x-4">
                     <SignInButton mode="modal">
@@ -80,9 +81,9 @@ export default function RootLayout({
                   <div>
                     <h3 className="text-sm font-sans font-light text-gray-800 mb-3">Links</h3>
                     <ul className="space-y-2">
-                      <li><a href="#" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Privacy Policy</a></li>
-                      <li><a href="#" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Terms of Service</a></li>
-                      <li><a href="#" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Contact</a></li>
+                      <li><PrivacyPolicyDialog /></li>
+                      <li><TermsOfServiceDialog /></li>
+                      <li><a href="mailto:support@kataba.app" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Contact</a></li>
                     </ul>
                   </div>
                   <div>
