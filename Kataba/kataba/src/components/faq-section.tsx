@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Separator } from '@/components/ui/separator';
 
 interface FaqItem {
   question: string;
@@ -12,7 +13,7 @@ const faqItems: FaqItem[] = [
     question: "What is Kataba?",
     answer: (
       <p>
-        Kataba (<em>كَتَبَ</em>) means &quot;to write&quot; in Arabic. In the Islamic tradition, writing is a means of reflection, seeking clarity, and deepening one&apos;s connection to the <em>Deen</em>. Kataba is your AI therapeutic companion, designed to provide thoughtful, judgment-free support through conversation—whether you need to express your thoughts, seek guidance, or reflect on life&apos;s journey.
+        Kataba (<em>كَتَبَ</em>) means "to write" in Arabic. In the Islamic tradition, writing is a means of reflection, seeking clarity, and deepening one's connection to the <em>Deen</em>. Kataba is your AI therapeutic companion, designed to provide thoughtful, judgment-free support through conversation—whether you need to express your thoughts, seek guidance, or reflect on life's journey.
       </p>
     ),
   },
@@ -62,7 +63,7 @@ const faqItems: FaqItem[] = [
     question: "Does Kataba offer religious advice or fatwas?",
     answer: (
       <p>
-        No, Kataba is not a religious authority and does not issue fatwas. While it incorporates Islamic values and therapeutic principles, it is designed for reflection and emotional support rather than providing religious rulings. In the future, we plan to incorporate references to the Qur&apos;an and authentic Hadith.
+        No, Kataba is not a religious authority and does not issue fatwas. While it incorporates Islamic values and therapeutic principles, it is designed for reflection and emotional support rather than providing religious rulings. In the future, we plan to incorporate references to the Qur'an and authentic Hadith.
       </p>
     ),
   },
@@ -94,7 +95,7 @@ const faqItems: FaqItem[] = [
     question: "How does Kataba compare to other AI companions?",
     answer: (
       <p>
-        Unlike generic AI chatbots, Kataba is built with a focus on <strong>spiritual and emotional well-being</strong>, incorporating an understanding of Islamic ethics, values, and mental health principles. It&apos;s designed to be a <strong>companion on your journey</strong>, not just a conversation tool.
+        Unlike generic AI chatbots, Kataba is built with a focus on <strong>spiritual and emotional well-being</strong>, incorporating an understanding of Islamic ethics, values, and mental health principles. It's designed to be a <strong>companion on your journey</strong>, not just a conversation tool.
       </p>
     ),
   },

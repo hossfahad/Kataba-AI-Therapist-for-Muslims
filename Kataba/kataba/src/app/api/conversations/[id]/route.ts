@@ -1,28 +1,24 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/conversations/[id] - Get a specific conversation
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
+    const user = await currentUser();
     
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
     
-    // Extract conversation ID from the URL pathname
-    const conversationId = request.nextUrl.pathname.split('/').pop();
-    
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: 'Missing conversation ID' },
-        { status: 400 }
-      );
-    }
+    const conversationId = params.id;
     
     const conversation = await prisma.conversation.findUnique({
       where: {
@@ -57,27 +53,22 @@ export async function GET(request: NextRequest) {
 }
 
 // PUT /api/conversations/[id] - Update a conversation
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
+    const user = await currentUser();
     
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
     
-    // Extract conversation ID from the URL pathname
-    const conversationId = request.nextUrl.pathname.split('/').pop();
-    
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: 'Missing conversation ID' },
-        { status: 400 }
-      );
-    }
-    
+    const conversationId = params.id;
     const { title, messages } = await request.json();
     
     // First, verify the conversation exists and belongs to the user
@@ -115,7 +106,7 @@ export async function PUT(request: NextRequest) {
     
     // Create new messages
     await prisma.message.createMany({
-      data: messages.map((message: { role: string; content: string; timestamp?: Date }) => ({
+      data: messages.map((message: any) => ({
         conversationId,
         role: message.role,
         content: message.content,
@@ -149,26 +140,22 @@ export async function PUT(request: NextRequest) {
 }
 
 // DELETE /api/conversations/[id] - Delete a conversation
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
+    const user = await currentUser();
     
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
     
-    // Extract conversation ID from the URL pathname
-    const conversationId = request.nextUrl.pathname.split('/').pop();
-    
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: 'Missing conversation ID' },
-        { status: 400 }
-      );
-    }
+    const conversationId = params.id;
     
     // First, verify the conversation exists and belongs to the user
     const existingConversation = await prisma.conversation.findUnique({

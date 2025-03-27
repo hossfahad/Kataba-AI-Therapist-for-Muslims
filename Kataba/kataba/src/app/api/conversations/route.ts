@@ -1,13 +1,20 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs';
 import { prisma } from '@/lib/prisma';
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: Date;
+}
+
 // GET /api/conversations - Get all conversations for the current user
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
+    const user = await currentUser();
     
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -41,11 +48,12 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/conversations - Create a new conversation
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
+    const user = await currentUser();
     
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest) {
         title,
         userId,
         messages: {
-          create: messages.map((message: { role: string; content: string; timestamp?: Date }) => ({
+          create: messages.map((message: ChatMessage) => ({
             role: message.role,
             content: message.content,
             timestamp: message.timestamp || new Date(),

@@ -16,22 +16,18 @@ export const ConversationList = () => {
     messages,
     clearMessages,
     conversationId,
-    setAuthenticated,
-    isAuthenticated
+    setAuthenticated
   } = useChatStore();
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authenticated, setAuthenticatedState] = useState(false);
   
   // Set authentication status when user auth state changes
   useEffect(() => {
     if (user && isSignedIn) {
       setAuthenticated(true, user.id);
-      setAuthenticatedState(true);
     } else {
       setAuthenticated(false);
-      setAuthenticatedState(false);
     }
   }, [user, isSignedIn, setAuthenticated]);
 

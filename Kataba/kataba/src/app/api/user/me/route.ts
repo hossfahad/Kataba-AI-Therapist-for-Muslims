@@ -1,10 +1,10 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs';
 import { getUserByClerkId } from '@/lib/db';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { userId } = getAuth(request);
+    const { userId } = auth();
     
     // If not authenticated, return 401
     if (!userId) {

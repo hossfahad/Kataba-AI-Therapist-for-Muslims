@@ -1,18 +1,18 @@
 import type { ReactNode } from 'react';
-import type { AuthObject, UserResource } from '@clerk/types';
+import type { AuthObject, SignInResource, SignUpResource, UserResource } from '@clerk/types';
 
 declare module "@clerk/nextjs" {
   export interface ClerkProviderProps {
     children: ReactNode;
-    customizations?: Record<string, unknown>;
+    [key: string]: any;
   }
 
   export const ClerkProvider: React.FC<ClerkProviderProps>;
-  export const SignIn: React.FC<Record<string, unknown>>;
-  export const SignUp: React.FC<Record<string, unknown>>;
-  export const SignInButton: React.FC<Record<string, unknown>>;
-  export const SignUpButton: React.FC<Record<string, unknown>>;
-  export const UserButton: React.FC<Record<string, unknown>>;
+  export const SignIn: React.FC<{[key: string]: any}>;
+  export const SignUp: React.FC<{[key: string]: any}>;
+  export const SignInButton: React.FC<{[key: string]: any}>;
+  export const SignUpButton: React.FC<{[key: string]: any}>;
+  export const UserButton: React.FC<{[key: string]: any}>;
   
   export interface AuthMiddlewareOptions {
     publicRoutes?: string[] | ((request: Request) => boolean);
@@ -20,7 +20,7 @@ declare module "@clerk/nextjs" {
     debug?: boolean;
   }
   
-  export function authMiddleware(options?: AuthMiddlewareOptions): unknown;
+  export function authMiddleware(options?: AuthMiddlewareOptions): any;
   export function currentUser(): Promise<UserResource | null>;
   export function auth(): AuthObject;
 } 
