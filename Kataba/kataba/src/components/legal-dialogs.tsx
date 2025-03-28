@@ -53,6 +53,7 @@ export const PrivacyPolicyDialog = () => {
               <ul className="list-disc pl-6 space-y-1 text-gray-600">
                 <li>You can delete your chat history and account anytime.</li>
                 <li>We do not retain personal information beyond what is necessary for account management.</li>
+                <li>To delete your data completely, simply contact us at <a href="mailto:hello@withkataba.com" className="text-teal-600 hover:text-teal-700">hello@withkataba.com</a>. We respect your privacy and give you full control over your information.</li>
               </ul>
             </div>
             
@@ -71,7 +72,7 @@ export const PrivacyPolicyDialog = () => {
             </div>
             
             <p className="text-gray-700">
-              If you have questions, reach out to <span className="text-teal-600">support@kataba.app</span>.
+              If you have questions, reach out to <span className="text-teal-600">hello@withkataba.com</span>.
             </p>
           </div>
         </ScrollArea>
@@ -140,7 +141,7 @@ export const TermsOfServiceDialog = () => {
             </div>
             
             <p className="text-gray-700">
-              By continuing to use Kataba, you acknowledge these terms. For questions, contact <span className="text-teal-600">support@kataba.app</span>.
+              By continuing to use Kataba, you acknowledge these terms. For questions, contact <span className="text-teal-600">hello@withkataba.com</span>.
             </p>
           </div>
         </ScrollArea>

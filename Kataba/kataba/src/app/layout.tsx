@@ -76,7 +76,7 @@ export default function RootLayout({
                     <ul className="space-y-2">
                       <li><PrivacyPolicyDialog /></li>
                       <li><TermsOfServiceDialog /></li>
-                      <li><a href="mailto:support@kataba.app" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Contact</a></li>
+                      <li><a href="mailto:hello@withkataba.com" className="text-xs text-gray-600 hover:text-teal-500 transition-colors duration-300">Contact</a></li>
                     </ul>
                   </div>
                   <div>

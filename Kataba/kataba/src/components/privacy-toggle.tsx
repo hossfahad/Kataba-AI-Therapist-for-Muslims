@@ -35,7 +35,7 @@ export const PrivacyToggle = () => {
               <Shield size={12} className={saveMessageContent ? "text-teal-500" : "text-red-500"} />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-xs">
+          <TooltipContent side="bottom" className="max-w-xs bg-white">
             <p className="text-xs">
               {saveMessageContent 
                 ? "Messages will be saved to your account. You can view them later in your chat history."
@@ -51,7 +51,7 @@ export const PrivacyToggle = () => {
             <Info size={14} />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 text-sm">
+        <PopoverContent className="w-80 text-sm bg-white">
           <div className="space-y-2">
             <h3 className="font-medium">Message Privacy Settings</h3>
             <p className="text-xs text-gray-500">
@@ -68,6 +68,16 @@ export const PrivacyToggle = () => {
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Shield size={14} className="text-red-500" />
               <span>OFF: Only conversation titles are saved</span>
+            </div>
+            <div className="mt-3 pt-2 border-t border-gray-100">
+              <h4 className="text-xs font-medium mb-1">Can I delete my data?</h4>
+              <p className="text-xs text-gray-500">
+                Yes. You can delete your data at any time by contacting us at 
+                <a href="mailto:hello@withkataba.com" className="text-teal-600 hover:text-teal-700 ml-1">
+                  hello@withkataba.com
+                </a>. 
+                We respect your privacy and give you full control over your information.
+              </p>
             </div>
           </div>
         </PopoverContent>
