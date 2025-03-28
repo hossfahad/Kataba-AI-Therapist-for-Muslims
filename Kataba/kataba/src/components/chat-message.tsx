@@ -68,8 +68,8 @@ export const ChatMessage = ({
             // User messages don't need markdown
             <p>{displayText}</p>
           ) : (
-            // Assistant messages use markdown and animation wrapper
-            <div className="opacity-0 animate-fadeIn bg-gray-100 p-3 rounded-lg shadow-md text-black">
+            // Assistant messages use markdown with fade-in animation (no bubble)
+            <div className="opacity-0 animate-fadeIn">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}
