@@ -69,7 +69,7 @@ export const ChatMessage = ({
             <p>{displayText}</p>
           ) : (
             // Assistant messages use markdown and animation wrapper
-            <div className="opacity-0 animate-fadeIn bg-gray-100 p-3 rounded-lg shadow-md">
+            <div className="opacity-0 animate-fadeIn bg-gray-100 p-3 rounded-lg shadow-md text-black">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}
