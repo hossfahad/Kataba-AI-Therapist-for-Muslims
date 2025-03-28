@@ -3,6 +3,9 @@ import { getAuth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from '@/lib/prisma';
 import { getOpenAICompletion } from '@/lib/openai-direct';
 
+// Define constants
+const MAX_GUEST_MESSAGES = 5; // Maximum allowed guest messages
+
 // Helper function to add CORS headers
 function corsHeaders(response: NextResponse) {
   response.headers.set('Access-Control-Allow-Origin', '*');
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
     const isGuestMode = !userId || !user;
     
     // Get messages from request body
-    const { messages, conversationId } = await request.json();
+    const { messages, conversationId, guestMessageCount } = await request.json();
     
     if (!Array.isArray(messages)) {
       return corsHeaders(NextResponse.json(
@@ -36,7 +39,32 @@ export async function POST(request: NextRequest) {
       ));
     }
     
+    // Check guest message limits if in guest mode
+    if (isGuestMode) {
+      if (guestMessageCount >= MAX_GUEST_MESSAGES) {
+        // If guest has reached their limit, return a special response prompting them to sign up
+        return corsHeaders(NextResponse.json({
+          content: "I've enjoyed our conversation! To continue chatting with me and save your conversations, please sign up for an account. It's free and only takes a moment.",
+          isGuestMode: true,
+          reachedLimit: true,
+          remainingMessages: 0
+        }));
+      }
+    }
+    
     try {
+      // Determine if this is the last message for a guest user
+      const isLastGuestMessage = isGuestMode && guestMessageCount === MAX_GUEST_MESSAGES - 1; // One away from the limit
+      
+      // Get the user's actual message content
+      const userMessage = messages[messages.length - 1]?.content || '';
+      
+      // Modify the final AI response for guests to encourage sign-up
+      let finalPrompt = '';
+      if (isLastGuestMessage) {
+        finalPrompt = `\n\nBy the way, this is your last free message. To continue our conversation and save your chat history, please consider signing up for an account. It's free and only takes a moment.`;
+      }
+      
       // Call OpenAI API directly using our utility function - works for all users
       const content = await getOpenAICompletion(
         messages.map(({ role, content }: { role: string; content: string }) => ({ 
@@ -44,6 +72,9 @@ export async function POST(request: NextRequest) {
           content 
         }))
       );
+      
+      // Add sign-up prompt if this is the last message
+      const finalContent = isLastGuestMessage ? content + finalPrompt : content;
       
       // Save conversation if user is authenticated and requested it
       if (!isGuestMode && conversationId) {
@@ -53,7 +84,7 @@ export async function POST(request: NextRequest) {
           await prisma.message.create({
             data: {
               role: 'assistant',
-              content,
+              content: finalContent,
               conversationId,
             },
           });
@@ -63,10 +94,12 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Return the response with a flag indicating if the user is in guest mode
+      // Return the response with information about guest mode and remaining messages
       return corsHeaders(NextResponse.json({ 
-        content,
-        isGuestMode 
+        content: finalContent,
+        isGuestMode,
+        reachedLimit: isGuestMode && guestMessageCount >= MAX_GUEST_MESSAGES - 1,
+        remainingMessages: isGuestMode ? Math.max(0, MAX_GUEST_MESSAGES - guestMessageCount - 1) : null
       }));
     } catch (error: unknown) {
       console.error('Detailed OpenAI API error:', error);

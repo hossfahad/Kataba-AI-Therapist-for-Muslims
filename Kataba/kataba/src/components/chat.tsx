@@ -6,6 +6,8 @@ import { useChatStore } from "@/lib/store";
 import { getChatCompletion } from "@/lib/openai";
 import { cn } from '@/lib/utils';
 import "@/components/ui/styles.css";
+import { useGuestLimitStore } from '@/lib/guest-limits';
+import { useUser } from "@clerk/nextjs";
 
 interface Message {
   id: string;
@@ -23,8 +25,11 @@ export const Chat = () => {
     addMessage, 
     updateMessage, 
     setLoading, 
-    toggleMute 
+    toggleMute,
+    isAuthenticated
   } = useChatStore();
+  const { user } = useUser();
+  const { messageCount, incrementCount, hasReachedLimit, getRemainingMessages } = useGuestLimitStore();
   
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -35,6 +40,11 @@ export const Chat = () => {
   const [streamedText, setStreamedText] = useState("");
   const [currentAssistantMessageId, setCurrentAssistantMessageId] = useState<string | null>(null);
   const [isApiAvailable, setIsApiAvailable] = useState(true);
+
+  // State for guest limit notification
+  const [showGuestLimitBanner, setShowGuestLimitBanner] = useState(false);
+  const [reachedLimit, setReachedLimit] = useState(false);
+  const [remainingMessages, setRemainingMessages] = useState(5);
 
   // Simple scroll to bottom function without any complex behavior
   const scrollToBottom = useCallback(() => {
@@ -147,55 +157,110 @@ export const Chat = () => {
   };
 
   const handleSubmit = async () => {
-    const content = inputRef.current?.value.trim();
-    if (!content || isLoading || !isApiAvailable) return;
+    const inputValue = inputRef.current?.value?.trim();
+    if (!inputValue || isLoading) return;
 
-    // Clear input
-    if (inputRef.current) {
-      inputRef.current.value = '';
+    // Don't allow sending if guest has reached message limit
+    if (!user && hasReachedLimit()) {
+      setReachedLimit(true);
+      setShowGuestLimitBanner(true);
+      return;
     }
 
-    // Add user message
-    addMessage({ role: 'user', content });
-    
-    // Force scroll to bottom after adding user message
-    scrollToBottom();
+    // Clear input and focus
+    if (inputRef.current) {
+      const value = inputRef.current.value;
+      inputRef.current.value = '';
+      inputRef.current.focus();
+    }
+
+    setLoading(true);
+    setIsStreaming(false);
 
     try {
-      setLoading(true);
-      setIsStreaming(true);
-      setStreamedText("");
-      
-      // Get AI response
-      const chatMessages = messages.map(msg => ({ role: msg.role, content: msg.content }));
-      chatMessages.push({ role: 'user' as const, content });
-      
-      // Add placeholder assistant message
-      const assistantMessageId = addMessage({ 
-        role: 'assistant', 
-        content: '' 
+      // Add user message to chat
+      addMessage({
+        role: 'user',
+        content: inputValue,
       });
-      setCurrentAssistantMessageId(assistantMessageId);
-      
-      // Force scroll to bottom after adding placeholder assistant message
+
+      // Scroll to the message
       scrollToBottom();
-      
-      // Get the full response - pass the conversationId
-      const response = await getChatCompletion(chatMessages, conversationId);
-      
-      // API is working if we got here
+
+      // Increment guest message count if not authenticated
+      if (!user) {
+        incrementCount();
+      }
+
+      // Create a temporary message for the assistant
+      const assistantMessageId = addMessage({
+        role: 'assistant',
+        content: '',
+      });
+
+      // Set current assistant message ID for streaming
+      setCurrentAssistantMessageId(assistantMessageId);
+
+      // Scroll to the temporary message
+      scrollToBottom();
+
+      // Start streaming state
+      setIsStreaming(true);
+      setStreamedText('');
+
+      // Get the conversation ID from the store
+      const { conversationId } = useChatStore.getState();
+      const currentGuestCount = useGuestLimitStore.getState().messageCount;
+
+      // Get all messages for context
+      const allMessages = useChatStore.getState().messages;
+
+      // Call the API endpoint
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: allMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+          conversationId,
+          guestMessageCount: currentGuestCount,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
+      // Get the response data
+      const data = await response.json();
+      const { content, isGuestMode, reachedLimit: apiReachedLimit, remainingMessages: apiRemainingMessages } = data;
+
+      // Update guest mode information
+      if (isGuestMode) {
+        setRemainingMessages(apiRemainingMessages);
+        setReachedLimit(apiReachedLimit);
+        
+        // Show banner if this was the last message or close to limit
+        if (apiRemainingMessages <= 1) {
+          setShowGuestLimitBanner(true);
+        }
+      }
+
+      // Set API as available since we received a response
       setIsApiAvailable(true);
       
       // Start TTS only if not muted
-      if (!isMuted && response) {
+      if (!isMuted && content) {
         // Fire and forget - this will play in the background while we stream text
-        speakText(response);
+        speakText(content);
       }
-      
-      // Split response into words and display them one by one
-      const words = response.split(' ');
-      
-      // Process words one by one with slight delays
+
+      // Simulate streaming text for better UX
+      const words = content.split(' ');
       for (let i = 0; i < words.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 50)); // Adjust timing as needed
         const partialResponse = words.slice(0, i + 1).join(' ');
@@ -210,9 +275,9 @@ export const Chat = () => {
       // Update the assistant message with the full content
       updateMessage(assistantMessageId, {
         role: 'assistant',
-        content: response
+        content: content
       });
-      
+
       // Final scroll after response is complete
       scrollToBottom();
       
@@ -289,6 +354,44 @@ export const Chat = () => {
         </div>
       </div>
 
+      {/* Guest limit notification banner */}
+      {showGuestLimitBanner && !user && (
+        <div className="bg-teal-50 border-l-4 border-teal-500 p-4 mx-3 mt-2 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-teal-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-teal-800">
+                {reachedLimit 
+                  ? "You've reached the guest message limit" 
+                  : `You have ${remainingMessages} message${remainingMessages !== 1 ? 's' : ''} remaining`}
+              </h3>
+              <div className="mt-2 text-sm text-teal-700">
+                <p>Sign up for free to continue this conversation and save your chat history.</p>
+              </div>
+              <div className="mt-3">
+                <a 
+                  href="/sign-up" 
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-teal-600 hover:bg-teal-500 focus:outline-none focus:border-teal-700 focus:shadow-outline-teal active:bg-teal-700 transition ease-in-out duration-150"
+                >
+                  Sign up now
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowGuestLimitBanner(false)}
+                  className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:border-teal-300 focus:shadow-outline-teal active:text-gray-800 active:bg-gray-50 transition ease-in-out duration-150"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages area */}
       <div 
         id="chat-container"
@@ -330,20 +433,20 @@ export const Chat = () => {
         <div className="flex items-center gap-2 relative">
           <Textarea
             ref={inputRef}
-            placeholder={isApiAvailable ? "Type your message..." : "API unavailable. Please try again later."}
+            placeholder={reachedLimit ? "You've reached the guest message limit. Please sign up to continue." : isApiAvailable ? "Type your message..." : "API unavailable. Please try again later."}
             className={cn(
               "min-h-[50px] max-h-[100px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-gray-300",
-              !isApiAvailable && "opacity-50"
+              (!isApiAvailable || reachedLimit) && "opacity-50"
             )}
             onKeyDown={handleKeyDown}
-            disabled={!isApiAvailable}
+            disabled={!isApiAvailable || reachedLimit}
           />
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || !isApiAvailable}
+            disabled={isLoading || !isApiAvailable || reachedLimit}
             className={cn(
               "bg-teal-600 hover:bg-teal-700 text-white rounded-lg h-10 w-10 p-0 flex items-center justify-center self-center",
-              !isApiAvailable && "opacity-50 cursor-not-allowed"
+              (!isApiAvailable || reachedLimit) && "opacity-50 cursor-not-allowed"
             )}
             aria-label="Send message"
           >
