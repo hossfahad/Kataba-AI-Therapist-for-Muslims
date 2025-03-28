@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     try {
       // Call OpenAI API
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...messages.map(({ role, content }: { role: string; content: string }) => ({ 
