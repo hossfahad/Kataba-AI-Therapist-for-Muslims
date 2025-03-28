@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import "@/components/ui/styles.css";
 import { useGuestLimitStore } from '@/lib/guest-limits';
 import { useUser } from "@clerk/nextjs";
+import { PrivacyToggle } from './privacy-toggle';
 
 interface Message {
   id: string;
@@ -328,6 +329,10 @@ export const Chat = () => {
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </Button>
+          
+          {/* Privacy toggle (only visible for authenticated users) */}
+          {isAuthenticated && <PrivacyToggle />}
+          
           <Button
             onClick={toggleMute}
             variant="ghost"

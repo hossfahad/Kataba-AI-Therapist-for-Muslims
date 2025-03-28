@@ -70,7 +70,7 @@ export async function PUT(
     }
     
     const conversationId = params.id;
-    const { title, messages } = await request.json();
+    const { title, messages, saveMessageContent = true } = await request.json();
     
     // First, verify the conversation exists and belongs to the user
     const existingConversation = await prisma.conversation.findUnique({
@@ -86,6 +86,17 @@ export async function PUT(
         { status: 404 }
       );
     }
+    
+    // Process messages based on privacy settings
+    const processedMessages = saveMessageContent 
+      ? messages 
+      : messages.map((message: any) => ({
+          ...message,
+          // Replace content with placeholder if privacy mode is enabled
+          content: message.role === 'user' 
+            ? '[Content hidden for privacy]'
+            : '[Assistant response hidden for privacy]'
+        }));
     
     // Update the conversation title
     await prisma.conversation.update({
@@ -107,7 +118,7 @@ export async function PUT(
     
     // Create new messages
     await prisma.message.createMany({
-      data: messages.map((message: any) => ({
+      data: processedMessages.map((message: any) => ({
         conversationId,
         role: message.role,
         content: message.content,

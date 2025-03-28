@@ -18,6 +18,9 @@ interface ChatState {
   savedConversations: { id: string; title: string; updatedAt: Date }[];
   lastAutoSaveTime: number;
   
+  // Privacy setting
+  saveMessageContent: boolean;
+  
   setAuthenticated: (isAuthenticated: boolean, userId?: string | null) => void;
   addMessage: (message: { role: 'user' | 'assistant'; content: string; }) => string;
   updateMessage: (id: string, content: string | { role: 'user' | 'assistant'; content: string }) => void;
@@ -29,6 +32,10 @@ interface ChatState {
   getSavedConversations: () => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
   autoSaveConversation: () => Promise<void>;
+  
+  // Privacy methods
+  setSaveMessageContent: (saveContent: boolean) => void;
+  toggleSaveMessageContent: () => void;
 }
 
 // Generate a unique ID for messages
@@ -55,6 +62,9 @@ export const useChatStore = create<ChatState>()(
       savedConversations: [],
       lastAutoSaveTime: 0,
       
+      // Default to saving message content (opt-out of privacy by default)
+      saveMessageContent: true,
+      
       setAuthenticated: (isAuthenticated, userId = null) => {
         set({ isAuthenticated, userId });
         if (!isAuthenticated) {
@@ -63,6 +73,15 @@ export const useChatStore = create<ChatState>()(
           // Load saved conversations when user is authenticated
           get().getSavedConversations();
         }
+      },
+      
+      // Privacy methods
+      setSaveMessageContent: (saveContent) => {
+        set({ saveMessageContent: saveContent });
+      },
+      
+      toggleSaveMessageContent: () => {
+        set((state) => ({ saveMessageContent: !state.saveMessageContent }));
       },
       
       addMessage: (message) => {
@@ -115,7 +134,14 @@ export const useChatStore = create<ChatState>()(
       },
       
       autoSaveConversation: async () => {
-        const { messages, userId, conversationId, isAuthenticated, lastAutoSaveTime } = get();
+        const { 
+          messages, 
+          userId, 
+          conversationId, 
+          isAuthenticated, 
+          lastAutoSaveTime,
+          saveMessageContent 
+        } = get();
         
         // Only auto-save if:
         // 1. User is authenticated
@@ -152,7 +178,7 @@ export const useChatStore = create<ChatState>()(
       },
       
       saveConversation: async (title) => {
-        const { messages, userId, conversationId } = get();
+        const { messages, userId, conversationId, saveMessageContent } = get();
         
         if (!userId || messages.length === 0) {
           console.error("Cannot save conversation - user not authenticated or no messages", { userId, messagesLength: messages.length });
@@ -167,11 +193,23 @@ export const useChatStore = create<ChatState>()(
           const endpoint = conversationId 
             ? `/api/conversations/${conversationId}`
             : '/api/conversations';
-            
+          
+          // Prepare messages based on privacy settings
+          const messagesToSave = saveMessageContent 
+            ? messages 
+            : messages.map(message => ({
+                ...message,
+                // Replace content with placeholder if privacy mode is enabled
+                content: message.role === 'user' 
+                  ? '[Content hidden for privacy]'
+                  : '[Assistant response hidden for privacy]'
+              }));
+          
           console.log(`Saving conversation to ${endpoint} with method ${method}`, { 
             title: conversationTitle,
             messagesCount: messages.length,
-            userId 
+            userId,
+            saveMessageContent
           });
           
           const response = await fetch(endpoint, {
@@ -181,8 +219,9 @@ export const useChatStore = create<ChatState>()(
             },
             body: JSON.stringify({
               title: conversationTitle,
-              messages,
-              userId
+              messages: messagesToSave,
+              userId,
+              saveMessageContent
             }),
           });
           
@@ -324,7 +363,8 @@ export const useChatStore = create<ChatState>()(
       partialize: (state) => ({ 
         messages: state.messages,
         isMuted: state.isMuted,
-        conversationId: state.conversationId 
+        conversationId: state.conversationId,
+        saveMessageContent: state.saveMessageContent
       }),
     }
   )

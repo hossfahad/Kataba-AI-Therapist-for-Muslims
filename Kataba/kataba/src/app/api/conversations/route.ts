@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
       requestBody = await request.json();
       console.log("Request body received:", {
         title: requestBody.title,
-        messagesCount: requestBody.messages?.length || 0
+        messagesCount: requestBody.messages?.length || 0,
+        saveMessageContent: requestBody.saveMessageContent
       });
     } catch (parseError) {
       console.error("Failed to parse request body:", parseError);
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { title, messages } = requestBody;
+    const { title, messages, saveMessageContent = true } = requestBody;
     
     if (!title || !messages || !Array.isArray(messages) || messages.length === 0) {
       console.error("Invalid request body:", { title, messages });
@@ -90,13 +91,25 @@ export async function POST(request: NextRequest) {
     console.log("Attempting to connect to database and create conversation");
     
     try {
+      // Process messages based on privacy settings
+      const processedMessages = saveMessageContent 
+        ? messages 
+        : messages.map((message: ChatMessage) => ({
+            ...message,
+            // Replace content with placeholder if privacy mode is enabled
+            content: message.role === 'user' 
+              ? '[Content hidden for privacy]'
+              : '[Assistant response hidden for privacy]'
+          }));
+      
       // Store the conversation in the database
       const conversation = await prisma.conversation.create({
         data: {
           title,
           userId,
+          privacyMode: !saveMessageContent, // Store the privacy setting in the database
           messages: {
-            create: messages.map((message: ChatMessage) => ({
+            create: processedMessages.map((message: ChatMessage) => ({
               role: message.role,
               content: message.content,
               timestamp: message.timestamp || new Date(),
