@@ -68,8 +68,8 @@ export const ChatMessage = ({
             // User messages don't need markdown
             <p>{displayText}</p>
           ) : (
-            // Assistant messages use markdown
-            <>
+            // Assistant messages use markdown and animation wrapper
+            <div className="opacity-0 animate-fadeIn bg-gray-100 p-3 rounded-lg shadow-md">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}
@@ -118,7 +118,7 @@ export const ChatMessage = ({
               {isStreaming && (
                 <span className="inline-block w-2 h-5 ml-1 bg-current animate-pulse-soft" />
               )}
-            </>
+            </div>
           )}
         </div>
         
