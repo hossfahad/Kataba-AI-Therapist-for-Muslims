@@ -20,7 +20,7 @@ export const PrivacyPolicyDialog = () => {
           Privacy Policy
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-3xl bg-white">
         <DialogHeader>
           <DialogTitle>Privacy Policy</DialogTitle>
           <DialogDescription>Last updated: {lastUpdated}</DialogDescription>
@@ -91,7 +91,7 @@ export const TermsOfServiceDialog = () => {
           Terms of Service
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-3xl bg-white">
         <DialogHeader>
           <DialogTitle>Terms of Service</DialogTitle>
           <DialogDescription>Last updated: {lastUpdated}</DialogDescription>

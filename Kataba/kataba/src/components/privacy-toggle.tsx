@@ -8,7 +8,6 @@ import { Info, Shield } from "lucide-react";
 export const PrivacyToggle = () => {
   const { saveMessageContent, setSaveMessageContent } = useChatStore();
   const [open, setOpen] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleToggleChange = (checked: boolean) => {
     setSaveMessageContent(checked);
@@ -16,49 +15,32 @@ export const PrivacyToggle = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <div 
-        className="relative" 
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-      >
-        <div className="flex items-center gap-1.5 bg-white/90 border border-gray-200 rounded-md px-2 py-1 shadow-sm">
-          <Switch
-            id="privacy-mode"
-            checked={saveMessageContent}
-            onCheckedChange={handleToggleChange}
-            aria-label="Toggle message saving"
-          />
-          <Label 
-            htmlFor="privacy-mode" 
-            className="text-xs font-medium cursor-pointer hidden sm:inline"
-          >
-            Save messages
-          </Label>
-          <Shield size={14} className={saveMessageContent ? "text-teal-500" : "text-red-500"} />
-        </div>
-        
-        {showTooltip && (
-          <div className="absolute bottom-full left-0 mb-2 w-64 bg-white border border-gray-200 rounded-md shadow-md p-2 z-50">
-            <p className="text-xs text-gray-600">
-              {saveMessageContent 
-                ? "Messages will be saved to your account. You can view them later in your chat history."
-                : "Messages will NOT be stored in the database. Only conversation titles will be saved."}
-            </p>
-            <div className="absolute bottom-0 left-4 transform translate-y-1/2 rotate-45 w-2 h-2 bg-white border-r border-b border-gray-200"></div>
-          </div>
-        )}
+      <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-md px-2 py-1 shadow-sm">
+        <Switch
+          id="privacy-mode"
+          checked={saveMessageContent}
+          onCheckedChange={handleToggleChange}
+          aria-label="Toggle message saving"
+        />
+        <Label 
+          htmlFor="privacy-mode" 
+          className="text-xs font-medium cursor-pointer hidden sm:inline"
+        >
+          Save messages
+        </Label>
+        <Shield size={14} className={saveMessageContent ? "text-teal-500" : "text-red-500"} />
       </div>
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button 
             aria-label="Privacy information" 
-            className="text-gray-400 hover:text-gray-600 bg-white/90 rounded-full border border-gray-200 p-1 shadow-sm"
+            className="text-gray-400 hover:text-gray-600 bg-white rounded-full border border-gray-200 p-1 shadow-sm"
           >
             <Info size={14} />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 text-sm bg-white">
+        <PopoverContent className="w-80 text-sm bg-white border border-gray-200 shadow-md">
           <div className="space-y-2">
             <h3 className="font-medium">Message Privacy Settings</h3>
             <p className="text-xs text-gray-500">
