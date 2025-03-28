@@ -46,28 +46,65 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Call OpenAI API
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...messages.map(({ role, content }: { role: string; content: string }) => ({ 
-          role: role as 'user' | 'assistant', 
-          content 
-        })),
-      ],
-      temperature: 0.7,
-      max_tokens: 1200,
-      top_p: 0.9,
-      frequency_penalty: 0.3,
-      presence_penalty: 0.5
-    });
+    // Debug: Log API key (truncated for security)
+    console.log(`Using API key: ${process.env.OPENAI_API_KEY.substring(0, 5)}...`);
     
-    // Return the response
-    return NextResponse.json({ 
-      content: response.choices[0]?.message?.content || '',
-    });
-    
+    try {
+      // Call OpenAI API
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...messages.map(({ role, content }: { role: string; content: string }) => ({ 
+            role: role as 'user' | 'assistant', 
+            content 
+          })),
+        ],
+        temperature: 0.7,
+        max_tokens: 1200,
+        top_p: 0.9,
+        frequency_penalty: 0.3,
+        presence_penalty: 0.5
+      })
+      .then((res) => {
+        console.log("OpenAI response received successfully");
+        return res;
+      })
+      .catch(err => {
+        console.error("OpenAI API error details:", {
+          status: err.status,
+          message: err.message,
+          type: err.type,
+          code: err.code,
+          response: err.response?.data,
+          headers: err.response?.headers
+        });
+        throw err;
+      });
+      
+      // Return the response
+      return NextResponse.json({ 
+        content: response.choices[0]?.message?.content || '',
+      });
+    } catch (error: unknown) {
+      console.error('Detailed OpenAI API error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const statusCode = (error as any)?.status === 401 ? 401 : 500;
+      
+      return NextResponse.json(
+        { 
+          error: statusCode === 401 ? 'OpenAI API authentication failed' : 'Failed to get response from AI',
+          message: errorMessage,
+          details: error instanceof Error ? {
+            name: error.name,
+            stack: error.stack,
+            cause: (error as any).cause
+          } : undefined
+        },
+        { status: statusCode }
+      );
+    }
   } catch (error: unknown) {
     console.error('Error in chat API route:', error);
     

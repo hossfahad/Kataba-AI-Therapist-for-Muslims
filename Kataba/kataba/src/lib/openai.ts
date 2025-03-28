@@ -6,6 +6,8 @@ export async function getChatCompletion(
   conversationId?: string | null
 ) {
   try {
+    console.log("Sending chat request to API endpoint");
+    
     // Call our own API endpoint that will safely use the OpenAI API server-side
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -18,15 +20,30 @@ export async function getChatCompletion(
       }),
     });
     
+    // Log response status
+    console.log(`API response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to get response from API');
+      console.error("Error response from API:", {
+        status: response.status,
+        statusText: response.statusText,
+        errorData
+      });
+      throw new Error(errorData.message || `API error: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
     return data.content || '';
   } catch (error) {
-    console.error('Error getting chat completion:', error);
+    console.error('Detailed error getting chat completion:', error);
+    if (error instanceof Error) {
+      console.error({
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    }
     throw new Error('Failed to get response from AI');
   }
 } 
