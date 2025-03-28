@@ -18,18 +18,16 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await getAuth(request);
+    // Try to get authentication information, but proceed even if not authenticated
+    const auth = await getAuth(request);
+    const userId = auth.userId;
     const user = await currentUser();
     
-    if (!userId || !user) {
-      return corsHeaders(NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      ));
-    }
+    // Guest mode flag - true if user is not authenticated
+    const isGuestMode = !userId || !user;
     
     // Get messages from request body
-    const { messages } = await request.json();
+    const { messages, conversationId } = await request.json();
     
     if (!Array.isArray(messages)) {
       return corsHeaders(NextResponse.json(
@@ -39,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
     
     try {
-      // Call OpenAI API directly using our utility function
+      // Call OpenAI API directly using our utility function - works for all users
       const content = await getOpenAICompletion(
         messages.map(({ role, content }: { role: string; content: string }) => ({ 
           role: role as 'user' | 'assistant', 
@@ -47,8 +45,29 @@ export async function POST(request: NextRequest) {
         }))
       );
       
-      // Return the response
-      return corsHeaders(NextResponse.json({ content }));
+      // Save conversation if user is authenticated and requested it
+      if (!isGuestMode && conversationId) {
+        try {
+          // Save the message to the database
+          // This operation is optional and doesn't affect the API response
+          await prisma.message.create({
+            data: {
+              role: 'assistant',
+              content,
+              conversationId,
+            },
+          });
+        } catch (dbError) {
+          // Log database errors but don't fail the request
+          console.error('Failed to save message to database:', dbError);
+        }
+      }
+      
+      // Return the response with a flag indicating if the user is in guest mode
+      return corsHeaders(NextResponse.json({ 
+        content,
+        isGuestMode 
+      }));
     } catch (error: unknown) {
       console.error('Detailed OpenAI API error:', error);
       
