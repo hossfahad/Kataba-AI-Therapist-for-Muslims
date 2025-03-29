@@ -290,4 +290,25 @@
   50% { opacity: 0.8; }
 }
 
+/* Force FAQ sections to always use LTR direction regardless of page language */
+[id="faq"], 
+[id="faq"] *,
+section[data-section="faq"],
+section[data-section="faq"] *,
+.faq-section,
+.faq-section *,
+.faq-item,
+.faq-question,
+.faq-answer {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate !important;
+}
+
+/* For components with FAQ in their classname */
+[class*="faq" i] {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
 
