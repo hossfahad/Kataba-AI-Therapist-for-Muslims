@@ -34,34 +34,40 @@ interface ChatMessageProps {
 
 // Component to render text with the surging animation effect
 const AnimatedTextRenderer = ({ text, isRTL }: { text: string; isRTL: boolean }) => {
-  // Split text into sentences or segments based on punctuation
-  const segments = text
-    .split(/([.!?]\s+)/)
-    .filter(Boolean)
-    .reduce((acc: string[], segment, index) => {
-      // Join segments back together if they were split by punctuation
-      if (index % 2 === 1 && acc.length > 0) {
-        acc[acc.length - 1] += segment;
-      } else {
-        acc.push(segment);
-      }
-      return acc;
-    }, []);
+  // Split text into words
+  const words = text.split(/\s+/).filter(Boolean);
+  
+  // Group words into chunks of 2-4 words for more natural bursts
+  const chunks: string[] = [];
+  let currentChunk: string[] = [];
+  
+  words.forEach((word, index) => {
+    currentChunk.push(word);
+    
+    // Create a new chunk every 2-4 words (randomized) or at punctuation
+    const isPunctuation = /[.!?]$/.test(word);
+    const chunkSize = Math.floor(Math.random() * 3) + 2; // Random between 2-4
+    
+    if (isPunctuation || currentChunk.length >= chunkSize || index === words.length - 1) {
+      chunks.push(currentChunk.join(' '));
+      currentChunk = [];
+    }
+  });
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: animatedTextStyles }} />
-      {segments.map((segment, index) => (
+      {chunks.map((chunk, index) => (
         <span 
           key={index} 
           className="animated-text"
           style={{ 
-            animationDelay: `${index * 0.2}s`,
+            animationDelay: `${index * 0.15}s`,
             display: 'inline-block',
             textAlign: isRTL ? 'right' : 'left'
           }}
         >
-          {segment}{' '}
+          {chunk}{' '}
         </span>
       ))}
     </>
@@ -133,60 +139,15 @@ export const ChatMessage = ({
           ) : (
             // Assistant messages use markdown with animation when ready
             <>
-              {isStreaming || !isAnimated ? (
-                // During streaming or before animation, show regular markdown
-                <>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                    components={{
-                      p: ({ node, ...props }) => (
-                        <p className="mb-3 last:mb-0" {...props} />
-                      ),
-                      ul: ({ node, ...props }) => (
-                        <ul className="list-disc pl-5 mb-3" {...props} />
-                      ),
-                      ol: ({ node, ...props }) => (
-                        <ol className="list-decimal pl-5 mb-3" {...props} />
-                      ),
-                      li: ({ node, ...props }) => (
-                        <li className="mb-1" {...props} />
-                      ),
-                      h1: ({ node, ...props }) => (
-                        <h1 className="text-xl font-medium mb-3 mt-4" {...props} />
-                      ),
-                      h2: ({ node, ...props }) => (
-                        <h2 className="text-lg font-medium mb-3 mt-4" {...props} />
-                      ),
-                      h3: ({ node, ...props }) => (
-                        <h3 className="text-md font-medium mb-2 mt-3" {...props} />
-                      ),
-                      blockquote: ({ node, ...props }) => (
-                        <blockquote className="border-l-4 border-gray-200 pl-4 italic my-3" {...props} />
-                      ),
-                      a: ({ node, ...props }) => (
-                        <a className="text-teal-600 hover:underline" {...props} />
-                      ),
-                      code: ({ node, className, ...props }: any) => {
-                        const match = /language-(\w+)/.exec(className || '');
-                        const isInline = !match && !props.block;
-                        return isInline 
-                          ? <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />
-                          : <code className="block bg-gray-100 p-2 rounded-md my-3 text-sm font-mono whitespace-pre-wrap" {...props} />;
-                      },
-                      pre: ({ node, ...props }) => (
-                        <pre className="bg-gray-100 p-2 rounded-md my-3 overflow-auto" {...props} />
-                      ),
-                    }}
-                  >
-                    {displayText}
-                  </ReactMarkdown>
-                  {isStreaming && (
-                    <span className="inline-block w-2 h-5 ml-1 bg-current animate-pulse-soft" />
-                  )}
-                </>
+              {isStreaming ? (
+                // When actively streaming, just show loading indicators instead of partial text
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "0ms" }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "200ms" }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "400ms" }}></div>
+                </div>
               ) : (
-                // After streaming completes, show animated text
+                // When message is complete, apply the animated rendering
                 <AnimatedTextRenderer text={displayText} isRTL={isRTL} />
               )}
             </>

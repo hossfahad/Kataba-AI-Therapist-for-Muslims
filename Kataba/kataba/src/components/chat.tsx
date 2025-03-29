@@ -208,7 +208,7 @@ export const Chat = () => {
       // Scroll to the temporary message
       scrollToBottom();
 
-      // Start streaming state
+      // Start streaming state - just to show loading indicator
       setIsStreaming(true);
       setStreamedText('');
 
@@ -275,25 +275,15 @@ export const Chat = () => {
         speakText(content);
       }
 
-      // Simulate streaming text for better UX
-      const words = content.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 50)); // Adjust timing as needed
-        const partialResponse = words.slice(0, i + 1).join(' ');
-        setStreamedText(partialResponse);
-        
-        // Scroll to bottom periodically as new content is added
-        if (i % 10 === 0) {
-          scrollToBottom();
-        }
-      }
-      
-      // Update the assistant message with the full content
+      // Skip the streaming simulation and directly update the message with full content
       updateMessage(assistantMessageId, {
         role: 'assistant',
         content: content
       });
 
+      // Turn off streaming state to trigger animation
+      setIsStreaming(false);
+      
       // Final scroll after response is complete
       scrollToBottom();
       
