@@ -1,136 +1,173 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth, currentUser } from "@clerk/nextjs/server";
+import { getAuth, currentUser } from '@clerk/nextjs/server';
+import { handleApiRequest } from '@/lib/prisma-helpers';
+import { getChatCompletion } from '@/lib/openai';
 import { prisma } from '@/lib/prisma';
-import { getOpenAICompletion } from '@/lib/openai-direct';
 
-// Define constants
-const MAX_GUEST_MESSAGES = 5; // Maximum allowed guest messages
-
-// Helper function to add CORS headers
-function corsHeaders(response: NextResponse) {
+// Add CORS headers to responses
+function addCorsHeaders(response: NextResponse) {
   response.headers.set('Access-Control-Allow-Origin', '*');
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return response;
 }
 
-// Handle OPTIONS requests for CORS preflight
-export async function OPTIONS(request: NextRequest) {
-  return corsHeaders(NextResponse.json({}, { status: 200 }));
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  const response = NextResponse.json({}, { status: 200 });
+  return addCorsHeaders(response);
 }
 
+// Handle chat requests
 export async function POST(request: NextRequest) {
-  try {
-    // Try to get authentication information, but proceed even if not authenticated
-    const auth = await getAuth(request);
-    const userId = auth.userId;
-    const user = await currentUser();
+  return handleApiRequest(async () => {
+    // Try to get user authentication info
+    // But allow unauthenticated users for guest mode
+    let userId = null;
+    let isGuestMode = true;
     
-    // Guest mode flag - true if user is not authenticated
-    const isGuestMode = !userId || !user;
-    
-    // Get messages from request body
-    const { messages, conversationId, guestMessageCount } = await request.json();
-    
-    if (!Array.isArray(messages)) {
-      return corsHeaders(NextResponse.json(
-        { error: 'Invalid request: messages must be an array' },
-        { status: 400 }
-      ));
-    }
-    
-    // Check guest message limits if in guest mode
-    if (isGuestMode) {
-      if (guestMessageCount >= MAX_GUEST_MESSAGES) {
-        // If guest has reached their limit, return a special response prompting them to sign up
-        return corsHeaders(NextResponse.json({
-          content: "I've enjoyed our conversation! To continue chatting with me and save your conversations, please sign up for an account. It's free and only takes a moment.",
-          isGuestMode: true,
-          reachedLimit: true,
-          remainingMessages: 0
-        }));
+    try {
+      const { userId: authUserId } = await getAuth(request);
+      const user = await currentUser();
+      
+      if (authUserId && user) {
+        userId = authUserId;
+        isGuestMode = false;
       }
+    } catch (error) {
+      console.log("User is not authenticated, proceeding in guest mode");
     }
     
     try {
-      // Determine if this is the last message for a guest user
-      const isLastGuestMessage = isGuestMode && guestMessageCount === MAX_GUEST_MESSAGES - 1; // One away from the limit
+      const body = await request.json();
+      const { messages, conversationId, guestMessageCount = 0 } = body;
       
-      // Get the user's actual message content
-      const userMessage = messages[messages.length - 1]?.content || '';
-      
-      // Modify the final AI response for guests to encourage sign-up
-      let finalPrompt = '';
-      if (isLastGuestMessage) {
-        finalPrompt = `\n\nBy the way, this is your last free message. To continue our conversation and save your chat history, please consider signing up for an account. It's free and only takes a moment.`;
+      // Validate request
+      if (!messages || !Array.isArray(messages)) {
+        return NextResponse.json(
+          { error: 'Invalid request: messages array is required' },
+          { status: 400 }
+        );
       }
       
-      // Call OpenAI API directly using our utility function - works for all users
-      const content = await getOpenAICompletion(
-        messages.map(({ role, content }: { role: string; content: string }) => ({ 
-          role: role as 'user' | 'assistant', 
-          content 
-        }))
-      );
+      // Guest mode enforcement
+      const maxGuestMessages = 5;
+      let reachedLimit = false;
+      let remainingMessages = maxGuestMessages - guestMessageCount;
       
-      // Add sign-up prompt if this is the last message
-      const finalContent = isLastGuestMessage ? content + finalPrompt : content;
+      // Check if guest has reached message limit
+      if (isGuestMode && guestMessageCount >= maxGuestMessages) {
+        // Return a message telling them to sign up
+        const response = NextResponse.json({
+          content: "You've reached the limit for guest messages. Please sign up to continue the conversation and save your chat history.",
+          isGuestMode,
+          reachedLimit: true,
+          remainingMessages: 0
+        });
+        return addCorsHeaders(response);
+      }
       
-      // Save conversation if user is authenticated and requested it
-      if (!isGuestMode && conversationId) {
+      // For guest users who are about to reach their limit, add a note to the response
+      const isNearLimit = isGuestMode && (maxGuestMessages - guestMessageCount <= 1);
+      
+      // Call the OpenAI API to generate a response
+      const content = await getChatCompletion(messages);
+            
+      // Save the conversation if:
+      // 1. User is authenticated
+      // 2. A conversation ID is provided
+      if (!isGuestMode && userId && conversationId) {
         try {
-          // Save the message to the database
-          // This operation is optional and doesn't affect the API response
-          await prisma.message.create({
-            data: {
-              role: 'assistant',
-              content: finalContent,
-              conversationId,
+          // Check if conversation exists
+          const existingConversation = await prisma.conversation.findUnique({
+            where: {
+              id: conversationId,
+              userId: userId,
             },
           });
+          
+          // If conversation doesn't exist, create it using the first user message as title
+          if (!existingConversation) {
+            const title = messages[0]?.content.slice(0, 50) + (messages[0]?.content.length > 50 ? "..." : "");
+            
+            await prisma.conversation.create({
+              data: {
+                id: conversationId,
+                title,
+                userId,
+                messages: {
+                  create: [
+                    ...messages.map((message: any) => ({
+                      role: message.role,
+                      content: message.content,
+                      timestamp: new Date(),
+                    })),
+                    {
+                      role: 'assistant',
+                      content,
+                      timestamp: new Date(),
+                    },
+                  ],
+                },
+              },
+            });
+          } else {
+            // Add the new messages to the existing conversation
+            await prisma.message.createMany({
+              data: [
+                ...messages.filter((m: any) => m.role !== 'system').map((message: any) => ({
+                  conversationId,
+                  role: message.role,
+                  content: message.content,
+                  timestamp: new Date(),
+                })),
+                {
+                  conversationId,
+                  role: 'assistant',
+                  content,
+                  timestamp: new Date(),
+                },
+              ],
+            });
+            
+            // Update conversation timestamp
+            await prisma.conversation.update({
+              where: { id: conversationId },
+              data: { updatedAt: new Date() },
+            });
+          }
         } catch (dbError) {
-          // Log database errors but don't fail the request
-          console.error('Failed to save message to database:', dbError);
+          // Don't fail the API call if saving to DB fails
+          // Just log the error and continue
+          console.error("Error saving conversation:", dbError);
         }
       }
       
-      // Return the response with information about guest mode and remaining messages
-      return corsHeaders(NextResponse.json({ 
-        content: finalContent,
+      // Modify the AI's response for guests who are close to their limit
+      let modifiedContent = content;
+      if (isNearLimit) {
+        const limitMessage = remainingMessages === 1 
+          ? "\n\nBy the way, this is your last free message as a guest. After this, you'll need to sign in to continue our conversation."
+          : `\n\nBy the way, you have ${remainingMessages} free messages left as a guest. To continue beyond that, you'll need to sign in.`;
+        
+        modifiedContent = content + limitMessage;
+      }
+      
+      // Return the response
+      const response = NextResponse.json({
+        content: modifiedContent,
         isGuestMode,
-        reachedLimit: isGuestMode && guestMessageCount >= MAX_GUEST_MESSAGES - 1,
-        remainingMessages: isGuestMode ? Math.max(0, MAX_GUEST_MESSAGES - guestMessageCount - 1) : null
-      }));
-    } catch (error: unknown) {
-      console.error('Detailed OpenAI API error:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const statusCode = (error as any)?.status === 401 ? 401 : 500;
-      
-      return corsHeaders(NextResponse.json(
-        { 
-          error: statusCode === 401 ? 'OpenAI API authentication failed' : 'Failed to get response from AI',
-          message: errorMessage,
-          details: error instanceof Error ? {
-            name: error.name,
-            stack: error.stack,
-            cause: (error as any).cause
-          } : undefined
-        },
-        { status: statusCode }
-      ));
+        reachedLimit,
+        remainingMessages
+      });
+      return addCorsHeaders(response);
+    } catch (error: any) {
+      console.error('Error in chat API:', error);
+      const response = NextResponse.json(
+        { error: error.message || 'An error occurred while processing your request' },
+        { status: 500 }
+      );
+      return addCorsHeaders(response);
     }
-  } catch (error: unknown) {
-    console.error('Error in chat API route:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    return corsHeaders(NextResponse.json(
-      { 
-        error: 'Failed to get response from AI',
-        message: errorMessage,
-      },
-      { status: 500 }
-    ));
-  }
+  });
 } 

@@ -2,13 +2,14 @@ import { NextResponse, NextRequest } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { handleApiRequest } from '@/lib/prisma-helpers';
 
 // GET /api/conversations/[id] - Get a specific conversation
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
+  return handleApiRequest(async () => {
     const { userId } = getAuth(request);
     const user = await currentUser();
     
@@ -43,14 +44,7 @@ export async function GET(
     }
     
     return NextResponse.json(conversation);
-    
-  } catch (error) {
-    console.error('Error fetching conversation:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 }
 
 // PUT /api/conversations/[id] - Update a conversation
@@ -58,7 +52,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
+  return handleApiRequest(async () => {
     const { userId } = getAuth(request);
     const user = await currentUser();
     
@@ -141,14 +135,7 @@ export async function PUT(
     });
     
     return NextResponse.json(updatedConversation);
-    
-  } catch (error) {
-    console.error('Error updating conversation:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 }
 
 // DELETE /api/conversations/[id] - Delete a conversation
@@ -156,7 +143,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
+  return handleApiRequest(async () => {
     const { userId } = getAuth(request);
     const user = await currentUser();
     
@@ -192,12 +179,5 @@ export async function DELETE(
     });
     
     return NextResponse.json({ success: true });
-    
-  } catch (error) {
-    console.error('Error deleting conversation:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 } 

@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAuth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from '@/lib/prisma';
+import { handleApiRequest } from '@/lib/prisma-helpers';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -10,7 +11,7 @@ interface ChatMessage {
 
 // GET /api/conversations - Get all conversations for the current user
 export async function GET(request: NextRequest) {
-  try {
+  return handleApiRequest(async () => {
     const { userId } = await getAuth(request);
     const user = await currentUser();
     
@@ -37,19 +38,12 @@ export async function GET(request: NextRequest) {
     });
     
     return NextResponse.json(conversations);
-    
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 }
 
 // POST /api/conversations - Create a new conversation
 export async function POST(request: NextRequest) {
-  try {
+  return handleApiRequest(async () => {
     const { userId } = await getAuth(request);
     const user = await currentUser();
     
@@ -152,11 +146,5 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-  } catch (error: any) {
-    console.error('Unhandled error creating conversation:', error);
-    return NextResponse.json(
-      { error: `Internal server error: ${error.message}` },
-      { status: 500 }
-    );
-  }
+  });
 } 

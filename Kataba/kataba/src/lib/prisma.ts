@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client/edge';
 
 // Log the DATABASE_URL (but mask the password)
 const dbUrl = process.env.DATABASE_URL || '';
@@ -8,11 +8,14 @@ console.log('Database connection string:', dbUrl.replace(/:(.*?)@/, ':****@'));
 // exhausting your database connection limit.
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn', 'info'] : ['error'],
-  });
+// Create Prisma client with limited connections
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL + "&pool_max_connections=2"
+    }
+  }
+});
 
 // Add error handler to check for connection issues
 prisma.$use(async (params: any, next: any) => {
@@ -38,6 +41,8 @@ async function testConnection() {
       message: error.message,
       code: error.code
     });
+  } finally {
+    // Don't disconnect here as we need the client for the app
   }
 }
 
@@ -45,4 +50,11 @@ async function testConnection() {
 if (process.env.NODE_ENV !== 'production') {
   testConnection();
   globalForPrisma.prisma = prisma;
-} 
+}
+
+// Ensure proper cleanup
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
+
+export { prisma }; 
