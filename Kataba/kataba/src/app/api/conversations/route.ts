@@ -96,12 +96,11 @@ export async function POST(request: NextRequest) {
               : '[Assistant response hidden for privacy]'
           }));
       
-      // Store the conversation in the database
+      // Store the conversation in the database - fix privacyMode issue by properly constructing the data
       const conversation = await prisma.conversation.create({
         data: {
           title,
           userId,
-          privacyMode: !saveMessageContent, // Store the privacy setting in the database
           messages: {
             create: processedMessages.map((message: ChatMessage) => ({
               role: message.role,
@@ -109,6 +108,8 @@ export async function POST(request: NextRequest) {
               timestamp: message.timestamp || new Date(),
             })),
           },
+          // Update the privacyMode field using proper Prisma schema field names
+          ...(!saveMessageContent && { privacyMode: true }),
         },
         include: {
           messages: true,

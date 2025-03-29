@@ -12,7 +12,7 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL + "&pool_max_connections=2"
+      url: process.env.DATABASE_URL + "&pool_timeout=30&connection_limit=4&pool_max_connections=4"
     }
   }
 });
