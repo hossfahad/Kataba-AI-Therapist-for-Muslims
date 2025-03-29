@@ -9,6 +9,8 @@ import "@/components/ui/styles.css";
 import { useGuestLimitStore } from '@/lib/guest-limits';
 import { useUser } from "@clerk/nextjs";
 import { PrivacyToggle } from './privacy-toggle';
+import { useLanguage } from '@/lib/hooks/useLanguage';
+import { LanguageCode } from '@/lib/languages';
 
 interface Message {
   id: string;
@@ -31,6 +33,7 @@ export const Chat = () => {
   } = useChatStore();
   const { user } = useUser();
   const { messageCount, incrementCount, hasReachedLimit, getRemainingMessages } = useGuestLimitStore();
+  const { currentLanguage, setLanguage, isRTL } = useLanguage();
   
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -216,7 +219,7 @@ export const Chat = () => {
       // Get all messages for context
       const allMessages = useChatStore.getState().messages;
 
-      // Call the API endpoint
+      // Call the API endpoint with language preference
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -229,6 +232,7 @@ export const Chat = () => {
           })),
           conversationId,
           guestMessageCount: currentGuestCount,
+          preferredLanguage: currentLanguage,
         }),
       });
 
@@ -238,7 +242,18 @@ export const Chat = () => {
 
       // Get the response data
       const data = await response.json();
-      const { content, isGuestMode, reachedLimit: apiReachedLimit, remainingMessages: apiRemainingMessages } = data;
+      const { 
+        content, 
+        isGuestMode, 
+        reachedLimit: apiReachedLimit, 
+        remainingMessages: apiRemainingMessages,
+        detectedLanguage 
+      } = data;
+
+      // Update detected language if needed
+      if (detectedLanguage && detectedLanguage !== currentLanguage) {
+        setLanguage(detectedLanguage as LanguageCode);
+      }
 
       // Update guest mode information
       if (isGuestMode) {
@@ -438,11 +453,18 @@ export const Chat = () => {
         <div className="flex items-center gap-2 relative">
           <Textarea
             ref={inputRef}
-            placeholder={reachedLimit ? "You've reached the guest message limit. Please sign up to continue." : isApiAvailable ? "Type your message..." : "API unavailable. Please try again later."}
+            placeholder={reachedLimit 
+              ? "You've reached the guest message limit. Please sign up to continue." 
+              : isApiAvailable 
+                ? `Type your message (${currentLanguage.toUpperCase()})...` 
+                : "API unavailable. Please try again later."
+            }
             className={cn(
               "min-h-[50px] max-h-[100px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-gray-300",
-              (!isApiAvailable || reachedLimit) && "opacity-50"
+              (!isApiAvailable || reachedLimit) && "opacity-50",
+              isRTL && "text-right"
             )}
+            dir={isRTL ? "rtl" : "ltr"}
             onKeyDown={handleKeyDown}
             disabled={!isApiAvailable || reachedLimit}
           />
@@ -457,6 +479,29 @@ export const Chat = () => {
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
           </Button>
+        </div>
+        
+        {/* Language indicator */}
+        <div className="mt-2 text-xs text-gray-400 flex justify-between items-center">
+          <div>
+            {currentLanguage && (
+              <span className="inline-flex items-center">
+                <span className="mr-1">
+                  {isRTL ? '←' : '→'} 
+                </span>
+                {`Using ${isRTL ? 'right-to-left' : 'left-to-right'} text direction`}
+              </span>
+            )}
+          </div>
+          <div>
+            {messages.length === 0
+              ? "Ask me anything - I'm here to help."
+              : user
+                ? ""
+                : hasReachedLimit()
+                  ? "Sign up to continue chatting"
+                  : `${getRemainingMessages()} messages left as guest`}
+          </div>
         </div>
       </div>
     </div>
