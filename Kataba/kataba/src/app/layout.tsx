@@ -7,6 +7,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { PrivacyPolicyDialog, TermsOfServiceDialog } from "@/components/legal-dialogs";
 import { HeaderAuth } from "@/components/header-auth";
+import Script from "next/script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -39,6 +40,27 @@ export default function RootLayout({
     >
       <QueryProvider>
         <html lang="en" className="scroll-smooth">
+          <head>
+            {/* Amplitude tracking (analytics) */}
+            <Script 
+              src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz" 
+              strategy="beforeInteractive"
+            />
+            
+            {/* Amplitude session replay plugin */}
+            <Script 
+              src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz" 
+              strategy="beforeInteractive"
+            />
+            
+            {/* Initialize Amplitude */}
+            <Script id="amplitude-init" strategy="afterInteractive">
+              {`
+                window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
+                window.amplitude.init('a3dbf76048b45ffaf9d4c5b76668f392', {"autocapture":{"elementInteractions":true}});
+              `}
+            </Script>
+          </head>
           <body
             className={`${inter.variable} font-sans antialiased bg-gradient-to-br from-teal-50 to-white min-h-screen flex flex-col`}
           >
