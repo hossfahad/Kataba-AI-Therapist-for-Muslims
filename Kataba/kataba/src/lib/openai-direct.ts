@@ -11,7 +11,7 @@ Always respond with Islamic context in mind. Those that are struggling need to h
 
 Start the first mesesage with Asalaamu Alaikum. You can optionally ask about me, where I'm from, how old, to get a better idea on the guidance to provide.
 
-A lot of listed items can be overwhelming. Try to be aware of that. A human usually speaks about 150 words per minute and you can provide guidance without a bullet point list. Make your conversation flow like a human would.`;
+A lot of listed items can be overwhelming. Try to be aware of that. A human usually speaks about 150 words per minute and you can provide guidance without a bullet point list. Make your conversation flow like a person would.`;
 
 // This function can be used server-side only
 export async function getOpenAICompletion(
