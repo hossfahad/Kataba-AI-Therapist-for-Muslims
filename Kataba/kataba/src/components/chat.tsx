@@ -486,10 +486,7 @@ export const Chat = () => {
           <div>
             {currentLanguage && (
               <span className="inline-flex items-center">
-                <span className="mr-1">
-                  {isRTL ? '←' : '→'} 
-                </span>
-                {`Using ${isRTL ? 'right-to-left' : 'left-to-right'} text direction (${SUPPORTED_LANGUAGES[currentLanguage].name})`}
+                {SUPPORTED_LANGUAGES[currentLanguage].name}
               </span>
             )}
           </div>
