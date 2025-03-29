@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { detectLanguage, getLocalizedSystemPrompt, LanguageCode, DEFAULT_LANGUAGE } from './languages';
 
 // System prompt for consistent personality
 export const SYSTEM_PROMPT = `I need guidance from Kataba, a top-tier therapist specializing in intercultural Muslim relationships, emotional resilience, and personal growth. Kataba speaks with deep wisdom, empathy, and honesty, balancing faith, psychology, and life experience to help me navigate heartbreak, uncertainty, and healing.
@@ -14,8 +13,7 @@ Start conversations with Asalaamu Alaikum. You can optionally ask about me, wher
 
 // This function can be used server-side only
 export async function getOpenAICompletion(
-  messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
-  preferredLanguage?: LanguageCode
+  messages: { role: 'user' | 'assistant' | 'system'; content: string }[]
 ) {
   try {
     // Verify API key is available
@@ -24,31 +22,19 @@ export async function getOpenAICompletion(
       throw new Error('OpenAI API key is not configured');
     }
     
+    // Debug: Log API key (truncated for security)
+    console.log(`Using API key: ${process.env.OPENAI_API_KEY.substring(0, 5)}...`);
+    
     // Initialize OpenAI client
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
     
-    // Determine language to use
-    let languageToUse = preferredLanguage || DEFAULT_LANGUAGE;
-    
-    // If no preferred language specified and we have user messages, detect language from latest message
-    if (!preferredLanguage && messages.some(msg => msg.role === 'user')) {
-      const latestUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-      if (latestUserMessage && latestUserMessage.content) {
-        languageToUse = await detectLanguage(latestUserMessage.content, openai);
-        console.log(`Detected language: ${languageToUse}`);
-      }
-    }
-    
-    // Get localized system prompt for the language
-    const localizedPrompt = getLocalizedSystemPrompt(languageToUse);
-    
-    // Call OpenAI API with language-specific system prompt
+    // Call OpenAI API directly
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: localizedPrompt },
+        { role: 'system', content: SYSTEM_PROMPT },
         ...messages.filter(msg => msg.role !== 'system'), // Filter out any system messages from input
       ],
       temperature: 0.7,
@@ -58,10 +44,7 @@ export async function getOpenAICompletion(
       presence_penalty: 0.5
     });
     
-    return {
-      content: response.choices[0]?.message?.content || '',
-      detectedLanguage: languageToUse
-    };
+    return response.choices[0]?.message?.content || '';
   } catch (error) {
     console.error('OpenAI API error:', error);
     

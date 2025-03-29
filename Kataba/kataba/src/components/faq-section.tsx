@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
-import { useLanguage } from '@/lib/hooks/useLanguage';
 
 interface FaqItem {
   question: string;
@@ -112,13 +111,13 @@ const faqItems: FaqItem[] = [
 
 const FaqItem = ({ item, isOpen, toggleOpen }: { item: FaqItem; isOpen: boolean; toggleOpen: () => void }) => {
   return (
-    <div className="faq-item border-b border-gray-100 py-4">
+    <div className="border-b border-gray-100 py-4">
       <button
         onClick={toggleOpen}
-        className="faq-question-button w-full flex justify-between items-center text-left focus:outline-none"
+        className="w-full flex justify-between items-center text-left focus:outline-none"
         aria-expanded={isOpen}
       >
-        <h3 className="faq-question text-lg font-light text-gray-800">{item.question}</h3>
+        <h3 className="text-lg font-light text-gray-800">{item.question}</h3>
         <span className={`ml-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -137,7 +136,7 @@ const FaqItem = ({ item, isOpen, toggleOpen }: { item: FaqItem; isOpen: boolean;
         </span>
       </button>
       {isOpen && (
-        <div className="faq-answer mt-3 text-gray-600 text-sm font-light leading-relaxed">
+        <div className="mt-3 text-gray-600 text-sm font-light leading-relaxed">
           {item.answer}
         </div>
       )}
@@ -147,36 +146,16 @@ const FaqItem = ({ item, isOpen, toggleOpen }: { item: FaqItem; isOpen: boolean;
 
 export const FaqSection = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const { isRTL, exemptFromRTL } = useLanguage();
-  const faqRef = useRef<HTMLElement>(null);
 
   const toggleFaq = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  // Force LTR for FAQ section regardless of site language
-  useEffect(() => {
-    if (faqRef.current) {
-      faqRef.current.dir = 'ltr';
-      
-      // For RTL languages, explicitly set all FAQ elements to LTR
-      if (isRTL) {
-        exemptFromRTL('#faq, #faq *, .faq-item, .faq-question, .faq-answer');
-      }
-    }
-  }, [isRTL, exemptFromRTL]);
-
   return (
-    <section 
-      id="faq" 
-      ref={faqRef}
-      className="faq-section py-12"
-      dir="ltr" // Explicitly set direction to LTR
-      data-section="faq" // Add a data attribute for targeting in CSS
-    >
-      <div className="faq-content max-w-4xl mx-auto px-4">
-        <h2 className="faq-heading text-2xl font-light text-gray-800 mb-8 text-center">Frequently Asked Questions</h2>
-        <div className="faq-container bg-white rounded-lg shadow-sm p-6">
+    <section id="faq" className="py-12">
+      <div className="max-w-4xl mx-auto px-4">
+        <h2 className="text-2xl font-light text-gray-800 mb-8 text-center">Frequently Asked Questions</h2>
+        <div className="bg-white rounded-lg shadow-sm p-6">
           {faqItems.map((item, index) => (
             <FaqItem
               key={index}

@@ -10,7 +10,6 @@ type LanguageContextType = {
   isRTL: boolean;
   greeting: string;
   supportedLanguages: typeof SUPPORTED_LANGUAGES;
-  exemptFromRTL: (selector: string) => void;
 };
 
 // Create context with default values
@@ -20,7 +19,6 @@ const LanguageContext = createContext<LanguageContextType>({
   isRTL: false,
   greeting: SUPPORTED_LANGUAGES[DEFAULT_LANGUAGE].greeting,
   supportedLanguages: SUPPORTED_LANGUAGES,
-  exemptFromRTL: () => {},
 });
 
 // Language provider props
@@ -49,19 +47,6 @@ export const LanguageProvider = ({
     }
   };
 
-  // Utility function to exempt specific elements from RTL direction
-  const exemptFromRTL = (selector: string) => {
-    try {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach((element) => {
-        (element as HTMLElement).dir = 'ltr';
-        (element as HTMLElement).style.textAlign = 'left';
-      });
-    } catch (error) {
-      console.error('Error exempting elements from RTL:', error);
-    }
-  };
-
   // Initialize language from localStorage or browser preference on client-side
   useEffect(() => {
     const storedLanguage = localStorage.getItem('preferred-language') as LanguageCode | null;
@@ -81,19 +66,6 @@ export const LanguageProvider = ({
     }
   }, []);
 
-  // Apply RTL exemptions after language change
-  useEffect(() => {
-    const isRightToLeft = SUPPORTED_LANGUAGES[currentLanguage].direction === 'rtl';
-    
-    if (isRightToLeft) {
-      // Use a small delay to ensure DOM is ready
-      setTimeout(() => {
-        // Add any specific selectors that should always be LTR
-        exemptFromRTL('[id="faq"], [id="faq"] *, .faq-section, .faq-section *, [class*="faq"]');
-      }, 100);
-    }
-  }, [currentLanguage]);
-
   // Derived values
   const isRTL = SUPPORTED_LANGUAGES[currentLanguage].direction === 'rtl';
   const greeting = SUPPORTED_LANGUAGES[currentLanguage].greeting;
@@ -105,8 +77,7 @@ export const LanguageProvider = ({
         setLanguage, 
         isRTL, 
         greeting,
-        supportedLanguages: SUPPORTED_LANGUAGES,
-        exemptFromRTL
+        supportedLanguages: SUPPORTED_LANGUAGES
       }}
     >
       {children}
