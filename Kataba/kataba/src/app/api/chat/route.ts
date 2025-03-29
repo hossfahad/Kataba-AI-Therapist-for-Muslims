@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from '@/lib/prisma';
 import { getOpenAICompletion } from '@/lib/openai-direct';
+import { LanguageCode, DEFAULT_LANGUAGE } from '@/lib/languages';
 
 // Define constants
 const MAX_GUEST_MESSAGES = 5; // Maximum allowed guest messages
@@ -12,6 +13,19 @@ function corsHeaders(response: NextResponse) {
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return response;
+}
+
+// Helper to store language in local storage
+async function storeLanguagePreference(userId: string, language: string) {
+  if (!userId) return;
+  
+  try {
+    // We can't modify the database schema, so let's use a different approach
+    // This could be implemented later when database migrations are possible
+    console.log(`[Language] User ${userId} preferred language: ${language}`);
+  } catch (error) {
+    console.error('Failed to store language preference:', error);
+  }
 }
 
 // Handle OPTIONS requests for CORS preflight
@@ -30,7 +44,7 @@ export async function POST(request: NextRequest) {
     const isGuestMode = !userId || !user;
     
     // Get messages from request body
-    const { messages, conversationId, guestMessageCount } = await request.json();
+    const { messages, conversationId, guestMessageCount, preferredLanguage } = await request.json();
     
     if (!Array.isArray(messages)) {
       return corsHeaders(NextResponse.json(
@@ -47,7 +61,8 @@ export async function POST(request: NextRequest) {
           content: "I've enjoyed our conversation! To continue chatting with me and save your conversations, please sign up for an account. It's free and only takes a moment.",
           isGuestMode: true,
           reachedLimit: true,
-          remainingMessages: 0
+          remainingMessages: 0,
+          detectedLanguage: preferredLanguage || DEFAULT_LANGUAGE
         }));
       }
     }
@@ -65,22 +80,30 @@ export async function POST(request: NextRequest) {
         finalPrompt = `\n\nBy the way, this is your last free message. To continue our conversation and save your chat history, please consider signing up for an account. It's free and only takes a moment.`;
       }
       
-      // Call OpenAI API directly using our utility function - works for all users
-      const content = await getOpenAICompletion(
+      // Call OpenAI API with language detection/preference
+      const response = await getOpenAICompletion(
         messages.map(({ role, content }: { role: string; content: string }) => ({ 
           role: role as 'user' | 'assistant', 
           content 
-        }))
+        })),
+        preferredLanguage as LanguageCode
       );
+      
+      // Extract content and detected language
+      const { content, detectedLanguage } = response;
       
       // Add sign-up prompt if this is the last message
       const finalContent = isLastGuestMessage ? content + finalPrompt : content;
+      
+      // If user is authenticated, store their language preference
+      if (userId) {
+        await storeLanguagePreference(userId, detectedLanguage);
+      }
       
       // Save conversation if user is authenticated and requested it
       if (!isGuestMode && conversationId) {
         try {
           // Save the message to the database
-          // This operation is optional and doesn't affect the API response
           await prisma.message.create({
             data: {
               role: 'assistant',
@@ -99,7 +122,8 @@ export async function POST(request: NextRequest) {
         content: finalContent,
         isGuestMode,
         reachedLimit: isGuestMode && guestMessageCount >= MAX_GUEST_MESSAGES - 1,
-        remainingMessages: isGuestMode ? Math.max(0, MAX_GUEST_MESSAGES - guestMessageCount - 1) : null
+        remainingMessages: isGuestMode ? Math.max(0, MAX_GUEST_MESSAGES - guestMessageCount - 1) : null,
+        detectedLanguage
       }));
     } catch (error: unknown) {
       console.error('Detailed OpenAI API error:', error);
@@ -115,7 +139,8 @@ export async function POST(request: NextRequest) {
             name: error.name,
             stack: error.stack,
             cause: (error as any).cause
-          } : undefined
+          } : undefined,
+          detectedLanguage: preferredLanguage || DEFAULT_LANGUAGE
         },
         { status: statusCode }
       ));
@@ -129,6 +154,7 @@ export async function POST(request: NextRequest) {
       { 
         error: 'Failed to get response from AI',
         message: errorMessage,
+        detectedLanguage: DEFAULT_LANGUAGE
       },
       { status: 500 }
     ));

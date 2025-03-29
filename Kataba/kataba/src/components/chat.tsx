@@ -9,6 +9,8 @@ import "@/components/ui/styles.css";
 import { useGuestLimitStore } from '@/lib/guest-limits';
 import { useUser } from "@clerk/nextjs";
 import { PrivacyToggle } from './privacy-toggle';
+import { useLanguage } from '@/lib/hooks/useLanguage';
+import { LanguageCode } from '@/lib/languages';
 
 interface Message {
   id: string;
@@ -31,6 +33,7 @@ export const Chat = () => {
   } = useChatStore();
   const { user } = useUser();
   const { messageCount, incrementCount, hasReachedLimit, getRemainingMessages } = useGuestLimitStore();
+  const { currentLanguage, setLanguage } = useLanguage();
   
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -216,7 +219,7 @@ export const Chat = () => {
       // Get all messages for context
       const allMessages = useChatStore.getState().messages;
 
-      // Call the API endpoint
+      // Call the API endpoint with language preference
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -229,6 +232,7 @@ export const Chat = () => {
           })),
           conversationId,
           guestMessageCount: currentGuestCount,
+          preferredLanguage: currentLanguage,
         }),
       });
 
@@ -238,7 +242,12 @@ export const Chat = () => {
 
       // Get the response data
       const data = await response.json();
-      const { content, isGuestMode, reachedLimit: apiReachedLimit, remainingMessages: apiRemainingMessages } = data;
+      const { content, isGuestMode, reachedLimit: apiReachedLimit, remainingMessages: apiRemainingMessages, detectedLanguage } = data;
+
+      // Update detected language if needed
+      if (detectedLanguage && detectedLanguage !== currentLanguage) {
+        setLanguage(detectedLanguage as LanguageCode);
+      }
 
       // Update guest mode information
       if (isGuestMode) {
@@ -251,212 +260,212 @@ export const Chat = () => {
         }
       }
 
-      // Set API as available since we received a response
-      setIsApiAvailable(true);
-      
-      // Start TTS only if not muted
-      if (!isMuted && content) {
-        // Fire and forget - this will play in the background while we stream text
-        speakText(content);
-      }
+      // Update the assistant message with the response
+      updateMessage(assistantMessageId, content);
 
-      // Simulate streaming text for better UX
-      const words = content.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 50)); // Adjust timing as needed
-        const partialResponse = words.slice(0, i + 1).join(' ');
-        setStreamedText(partialResponse);
-        
-        // Scroll to bottom periodically as new content is added
-        if (i % 10 === 0) {
-          scrollToBottom();
-        }
-      }
-      
-      // Update the assistant message with the full content
-      updateMessage(assistantMessageId, {
-        role: 'assistant',
-        content: content
-      });
-
-      // Final scroll after response is complete
-      scrollToBottom();
-      
-    } catch (error) {
-      console.error('Error:', error);
-      // Mark API as unavailable
-      setIsApiAvailable(false);
-      
-      addMessage({
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again.',
-      });
-      
-      // Scroll to error message
-      scrollToBottom();
-    } finally {
-      setLoading(false);
+      // Stop streaming
       setIsStreaming(false);
       setCurrentAssistantMessageId(null);
+
+      // Speak the text if audio is enabled
+      await speakText(content);
+    } catch (error) {
+      console.error('Error in chat:', error);
+      
+      // Add an error message if the request fails
+      if (currentAssistantMessageId) {
+        updateMessage(
+          currentAssistantMessageId,
+          "I'm sorry, but I'm having trouble connecting to my services right now. Please try again later."
+        );
+      }
+      
+      // Reset streaming state
+      setIsStreaming(false);
+      setCurrentAssistantMessageId(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Submit on Enter (without Shift)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
   };
 
+  // Handle mobile viewport adjustments when keyboard is shown
+  useEffect(() => {
+    const handleResize = () => {
+      // Only run this on mobile devices (viewport width < 768px)
+      if (window.innerWidth < 768) {
+        // This helps ensure the input is visible when keyboard appears
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="flex h-full flex-col gap-2 relative overflow-hidden rounded-lg bg-white/50">
-      {/* Chat header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isApiAvailable ? 'bg-teal-500 animate-pulse-soft' : 'bg-gray-300'}`}></div>
-          <span className="text-sm font-medium text-gray-700">Conversation</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={scrollToBottom}
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-gray-600 bg-white/90 rounded-full border border-gray-200 p-1 shadow-sm flex-shrink-0"
-            aria-label="Scroll to bottom"
-            title="Scroll to bottom"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </Button>
-          
-          {/* Privacy toggle (only visible for authenticated users) */}
-          {isAuthenticated && <PrivacyToggle />}
-          
-          <Button
-            onClick={toggleMute}
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "rounded-md px-2 bg-white/90 border border-gray-200 shadow-sm", 
-              isMuted ? "text-gray-300" : "text-teal-500"
-            )}
-            aria-label={isMuted ? "Enable audio" : "Disable audio"}
-            title={isMuted ? "Enable audio" : "Disable audio"}
-          >
-            {isMuted ? (
-              <div className="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-                <span className="text-xs font-medium hidden sm:inline">Voice: Off</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                <span className="text-xs font-medium hidden sm:inline">Voice: On</span>
-              </div>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* Guest limit notification banner */}
-      {showGuestLimitBanner && !user && (
-        <div className="bg-teal-50 border-l-4 border-teal-500 p-4 mx-3 mt-2 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-teal-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-teal-800">
-                {reachedLimit 
-                  ? "You've reached the guest message limit" 
-                  : `You have ${remainingMessages} message${remainingMessages !== 1 ? 's' : ''} remaining`}
-              </h3>
-              <div className="mt-2 text-sm text-teal-700">
-                <p>Sign up for free to continue this conversation and save your chat history.</p>
-              </div>
-              <div className="mt-3">
-                <a 
-                  href="/sign-up" 
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-teal-600 hover:bg-teal-500 focus:outline-none focus:border-teal-700 focus:shadow-outline-teal active:bg-teal-700 transition ease-in-out duration-150"
-                >
-                  Sign up now
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setShowGuestLimitBanner(false)}
-                  className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:border-teal-300 focus:shadow-outline-teal active:text-gray-800 active:bg-gray-50 transition ease-in-out duration-150"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Messages area */}
-      <div 
-        id="chat-container"
-        className="flex-1 px-4 py-2 overflow-y-auto scroll-auto custom-scrollbar"
+    <div className="flex flex-col h-full max-h-[calc(100vh-64px)] overflow-hidden">
+      {/* Chat messages container */}
+      <div
         ref={chatContainerRef}
+        className="flex-grow overflow-y-auto p-4 space-y-4"
       >
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 animate-bounce-soft"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            <p className="text-base font-medium">Start a conversation to begin</p>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-2 max-w-md mx-auto">
+              <h2 className="text-xl font-sans font-light text-gray-700">Welcome to Kataba</h2>
+              <p className="text-sm text-gray-500">
+                Your personal therapist specializing in Muslim relationships, emotional healing, and personal growth.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col">
-            {messages.map((message: Message) => (
-              <ChatMessage 
-                key={message.id}
-                role={message.role}
-                content={message.content}
-                timestamp={message.timestamp}
-                isStreaming={isStreaming && message.id === currentAssistantMessageId}
-                displayedContent={message.id === currentAssistantMessageId ? streamedText : undefined}
-              />
-            ))}
-            {isLoading && !isStreaming && (
-              <div className="text-sm text-gray-500 py-2 px-1 mt-4">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "0ms" }}></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "200ms" }}></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-300 animate-bounce-soft" style={{ animationDelay: "400ms" }}></div>
-                </div>
-              </div>
-            )}
-          </div>
+          messages.map((message) => (
+            <ChatMessage 
+              key={message.id} 
+              message={message} 
+              isStreaming={isStreaming && currentAssistantMessageId === message.id}
+              streamedContent={currentAssistantMessageId === message.id ? streamedText : undefined}
+            />
+          ))
         )}
       </div>
 
+      {/* Guest limit banner */}
+      {showGuestLimitBanner && (
+        <div className="bg-amber-50 border-t border-amber-200 p-3 text-center">
+          <p className="text-sm text-amber-800">
+            {reachedLimit 
+              ? "You've reached the guest message limit. Sign up for free to continue chatting!" 
+              : `You have ${remainingMessages} messages left as a guest. Sign up to get unlimited access!`}
+          </p>
+          <a 
+            href="/sign-up" 
+            className="mt-2 inline-block text-xs font-medium px-3 py-1 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-colors"
+          >
+            Sign up now
+          </a>
+        </div>
+      )}
+
+      {/* API unavailable warning */}
+      {!isApiAvailable && (
+        <div className="bg-red-50 border-t border-red-200 p-2 text-center">
+          <p className="text-sm text-red-700">
+            We're having trouble connecting to our servers. Please try again later.
+          </p>
+        </div>
+      )}
+
       {/* Input area */}
-      <div className="p-3 border-t border-gray-100">
-        <div className="flex items-center gap-2 relative">
+      <div className="p-4 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
+        <div className="flex items-start space-x-2">
           <Textarea
             ref={inputRef}
-            placeholder={reachedLimit ? "You've reached the guest message limit. Please sign up to continue." : isApiAvailable ? "Type your message..." : "API unavailable. Please try again later."}
+            placeholder={`Type a message (${currentLanguage.toUpperCase()})...`}
             className={cn(
-              "min-h-[50px] max-h-[100px] flex-1 resize-none bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm text-base placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-gray-300",
-              (!isApiAvailable || reachedLimit) && "opacity-50"
+              "min-h-12 resize-none p-3 rounded-md border-gray-300 focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50",
+              isLoading && "opacity-50 cursor-not-allowed"
             )}
             onKeyDown={handleKeyDown}
-            disabled={!isApiAvailable || reachedLimit}
+            disabled={isLoading || (hasReachedLimit() && !user)}
+            dir={currentLanguage === 'ar' || currentLanguage === 'ur' ? 'rtl' : 'ltr'}
           />
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading || !isApiAvailable || reachedLimit}
-            className={cn(
-              "bg-teal-600 hover:bg-teal-700 text-white rounded-lg h-10 w-10 p-0 flex items-center justify-center self-center",
-              (!isApiAvailable || reachedLimit) && "opacity-50 cursor-not-allowed"
-            )}
-            aria-label="Send message"
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading || (hasReachedLimit() && !user)}
+              className={cn(
+                "px-3 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-md transition-colors",
+                isLoading && "opacity-50 cursor-not-allowed"
+              )}
+              aria-label="Send message"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </Button>
+            <PrivacyToggle />
+          </div>
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <button
+            onClick={toggleMute}
+            className="text-xs text-gray-500 hover:text-teal-500 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          </Button>
+            {isMuted ? (
+              <span className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-1"
+                >
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                Sound Off
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-1"
+                >
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                Sound On
+              </span>
+            )}
+          </button>
+          
+          <p className="text-xs text-gray-400">
+            {messages.length === 0
+              ? "Ask me anything - I'm here to help."
+              : user
+              ? ""
+              : hasReachedLimit()
+              ? "Sign up to continue chatting"
+              : `${getRemainingMessages()} messages left as guest`}
+          </p>
         </div>
       </div>
     </div>

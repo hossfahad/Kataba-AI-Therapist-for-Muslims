@@ -6,23 +6,28 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 
-interface ChatMessageProps {
+// Define Message interface that matches the structure in Chat.tsx
+interface Message {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+}
+
+interface ChatMessageProps {
+  message: Message;
   isStreaming?: boolean;
-  displayedContent?: string;
+  streamedContent?: string;
 }
 
 export const ChatMessage = ({ 
-  role, 
-  content, 
-  timestamp, 
+  message,
   isStreaming = false,
-  displayedContent 
+  streamedContent 
 }: ChatMessageProps) => {
+  const { role, content, timestamp } = message;
   const isUser = role === 'user';
-  const [displayText, setDisplayText] = useState(isUser ? content : (displayedContent || ''));
+  const [displayText, setDisplayText] = useState(isUser ? content : (streamedContent || ''));
   const messageRef = useRef<HTMLParagraphElement>(null);
 
   // If this is the assistant and we're not streaming, display the full content
@@ -34,10 +39,10 @@ export const ChatMessage = ({
 
   // Update display text when streaming new content
   useEffect(() => {
-    if (!isUser && displayedContent !== undefined) {
-      setDisplayText(displayedContent);
+    if (!isUser && streamedContent !== undefined) {
+      setDisplayText(streamedContent);
     }
-  }, [displayedContent, isUser]);
+  }, [streamedContent, isUser]);
 
   // Ensure timestamp is a valid Date object
   const messageTime = timestamp instanceof Date ? timestamp : new Date();
