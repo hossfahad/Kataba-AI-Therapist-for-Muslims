@@ -40,10 +40,15 @@ export const LanguageProvider = ({
     if (SUPPORTED_LANGUAGES[lang]) {
       setCurrentLanguage(lang);
       localStorage.setItem('preferred-language', lang);
+      
       // Update document direction
-      document.documentElement.dir = SUPPORTED_LANGUAGES[lang].direction;
+      const direction = SUPPORTED_LANGUAGES[lang].direction;
+      document.documentElement.dir = direction;
+      
       // Update lang attribute
       document.documentElement.lang = lang;
+      
+      console.log(`Language set to ${lang}, direction: ${direction}`);
     }
   };
 
@@ -64,7 +69,14 @@ export const LanguageProvider = ({
         setLanguage(DEFAULT_LANGUAGE);
       }
     }
-  }, []);
+
+    // Force update direction when component mounts
+    const htmlDir = document.documentElement.dir;
+    const shouldBeDir = SUPPORTED_LANGUAGES[currentLanguage].direction;
+    if (htmlDir !== shouldBeDir) {
+      document.documentElement.dir = shouldBeDir;
+    }
+  }, [currentLanguage]);
 
   // Derived values
   const isRTL = SUPPORTED_LANGUAGES[currentLanguage].direction === 'rtl';

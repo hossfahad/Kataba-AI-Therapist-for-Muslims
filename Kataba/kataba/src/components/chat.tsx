@@ -10,7 +10,7 @@ import { useGuestLimitStore } from '@/lib/guest-limits';
 import { useUser } from "@clerk/nextjs";
 import { PrivacyToggle } from './privacy-toggle';
 import { useLanguage } from '@/lib/hooks/useLanguage';
-import { LanguageCode } from '@/lib/languages';
+import { LanguageCode, SUPPORTED_LANGUAGES } from '@/lib/languages';
 
 interface Message {
   id: string;
@@ -489,7 +489,7 @@ export const Chat = () => {
                 <span className="mr-1">
                   {isRTL ? '←' : '→'} 
                 </span>
-                {`Using ${isRTL ? 'right-to-left' : 'left-to-right'} text direction`}
+                {`Using ${isRTL ? 'right-to-left' : 'left-to-right'} text direction (${SUPPORTED_LANGUAGES[currentLanguage].name})`}
               </span>
             )}
           </div>

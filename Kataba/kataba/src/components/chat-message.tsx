@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
+import { useLanguage } from "@/lib/hooks/useLanguage";
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -24,6 +25,7 @@ export const ChatMessage = ({
   const isUser = role === 'user';
   const [displayText, setDisplayText] = useState(isUser ? content : (displayedContent || ''));
   const messageRef = useRef<HTMLParagraphElement>(null);
+  const { isRTL } = useLanguage();
 
   // If this is the assistant and we're not streaming, display the full content
   useEffect(() => {
@@ -63,6 +65,7 @@ export const ChatMessage = ({
             "markdown-content text-base leading-relaxed font-['Inter','Open Sans',sans-serif]",
             isUser ? "text-teal-700" : "text-gray-800"
           )}
+          dir={isRTL ? "rtl" : "ltr"}
         >
           {isUser ? (
             // User messages don't need markdown
