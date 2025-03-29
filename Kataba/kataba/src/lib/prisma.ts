@@ -8,11 +8,12 @@ console.log('Database connection string:', dbUrl.replace(/:(.*?)@/, ':****@'));
 // exhausting your database connection limit.
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-// Create Prisma client with limited connections
+// Create Prisma client with proper configuration
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL + "&pool_timeout=30&connection_limit=4&pool_max_connections=4"
+      // Don't add parameters to the URL - use it as provided in the env variable
+      url: process.env.DATABASE_URL
     }
   }
 });

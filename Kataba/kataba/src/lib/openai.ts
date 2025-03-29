@@ -8,8 +8,13 @@ export async function getChatCompletion(
   try {
     console.log("Sending chat request to API endpoint");
     
+    // Get the base URL from the window location or use a default for server-side
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    
     // Call our own API endpoint that will safely use the OpenAI API server-side
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
